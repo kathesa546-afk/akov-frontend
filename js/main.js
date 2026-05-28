@@ -1,8 +1,10 @@
 // =====================
 // CONFIGURACIÓN API
 // =====================
-const API_URL = 'https://web-production-3b3ef.up.railway.app/api';
-
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://127.0.0.1:8000/api'
+  : 'https://web-production-3b3ef.up.railway.app/api';
+  
 const getToken = () => localStorage.getItem('akov_token');
 const getRefreshToken = () => localStorage.getItem('akov_refresh');
 const setToken = t => localStorage.setItem('akov_token', t);
