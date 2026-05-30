@@ -17,7 +17,7 @@ const getUsuarioGuardado = () => {
 const setUsuarioGuardado = u => localStorage.setItem('akov_usuario', JSON.stringify(u));
 const removeUsuario = () => localStorage.removeItem('akov_usuario');
 
-// ✅ CORREGIDO: interceptor que renueva el token automáticamente cuando expira (401)
+// Interceptor que renueva el token automáticamente cuando expira (401)
 async function apiCall(endpoint, method = 'GET', data = null, retry = true) {
   const headers = { 'Content-Type': 'application/json' };
   const token = getToken();
@@ -28,7 +28,7 @@ async function apiCall(endpoint, method = 'GET', data = null, retry = true) {
   try {
     const res = await fetch(API_URL + endpoint, opts);
 
-    // ✅ Token expirado → intentar refrescar una vez
+    // Token expirado → intentar refrescar una vez
     if (res.status === 401 && retry) {
       const refreshed = await refrescarAccess();
       if (refreshed) return apiCall(endpoint, method, data, false);
@@ -170,7 +170,7 @@ const PRODUCTOS_DATA = [
 // =====================
 let productos = [...PRODUCTOS_DATA];
 let filtroActivo = "all";
-let carrito = JSON.parse(localStorage.getItem('akov_carrito') || '[]'); // ✅ Persiste el carrito
+let carrito = JSON.parse(localStorage.getItem('akov_carrito') || '[]');
 let favoritos = [];
 let usuarioActual = null;
 let tallaSeleccionada = null;
@@ -201,11 +201,9 @@ async function cargarProductosAPI() {
       precioOriginal: p.precio_original ? parseFloat(p.precio_original) : null,
       ventas: p.ventas,
       tag: p.tiene_descuento ? 'sale' : (p.nuevo ? 'new' : ''),
-      // ✅ CORREGIDO: usa foto_principal de la API (URL absoluta)
       foto: p.foto_principal || null,
       fotoModelo: p.foto_modelo || null,
       icono: p.foto_principal ? null : '👗',
-      // ✅ CORREGIDO: tallas como objetos {nombre, disponible}
       tallas: p.tallas || [],
       descripcion: p.descripcion,
     }));
@@ -243,7 +241,6 @@ async function verificarSesion() {
     usuarioActual = usuario;
     actualizarNavbarUsuario();
     cargarFavoritosBackend();
-    // Pre-llenar checkout si hay sesión
     if (usuarioActual.nombre) {
       const chkNombre = document.getElementById('chkNombre');
       if (chkNombre && !chkNombre.value) chkNombre.value = usuarioActual.nombre;
@@ -262,7 +259,6 @@ async function loginUser() {
   if (!res.tokens || !res.tokens.access) { mostrarNotificacion('Error del servidor'); return; }
 
   setToken(res.tokens.access);
-  // ✅ CORREGIDO: guardar también el refresh token
   if (res.tokens.refresh) setRefreshToken(res.tokens.refresh);
   setUsuarioGuardado(res.usuario);
   usuarioActual = res.usuario;
@@ -271,7 +267,6 @@ async function loginUser() {
   mostrarNotificacion('Bienvenido, ' + (usuarioActual.nombre || usuarioActual.email).split(' ')[0]);
   cargarFavoritosBackend();
 
-  // Pre-llenar checkout
   const chkNombre = document.getElementById('chkNombre');
   if (chkNombre && usuarioActual.nombre) chkNombre.value = usuarioActual.nombre;
 }
@@ -289,7 +284,6 @@ async function registerUser() {
   if (!res.tokens || !res.tokens.access) { mostrarNotificacion('Error del servidor'); return; }
 
   setToken(res.tokens.access);
-  // ✅ CORREGIDO: guardar también el refresh token
   if (res.tokens.refresh) setRefreshToken(res.tokens.refresh);
   setUsuarioGuardado(res.usuario);
   usuarioActual = res.usuario;
@@ -300,7 +294,6 @@ async function registerUser() {
 }
 
 async function cerrarSesion() {
-  // ✅ CORREGIDO: envía el refresh token para invalidarlo en backend
   const refresh = getRefreshToken();
   if (refresh) {
     await apiCall('/auth/logout/', 'POST', { refresh });
@@ -342,9 +335,8 @@ function switchTab(tab) {
 // RENDER PRODUCTOS
 // =====================
 function renderImagen(p, clase = 'product-img-inner') {
-  // ✅ CORREGIDO: muestra imagen real si viene de la API, icono si no
   if (p.foto) {
-    return `<img src="${p.foto}" alt="${p.nombre}" class="${clase}" loading="lazy" onerror="this.outerHTML='<span class=\\"product-img-inner\\">${p.icono || '👗'}</span>'">`;
+    return `<img src="${p.foto}" alt="${p.nombre}" class="${clase}" loading="lazy" onerror="this.outerHTML='<span class=\\"${clase}\\">${p.icono || '👗'}</span>'">`;
   }
   return `<span class="${clase}">${p.icono || '👗'}</span>`;
 }
@@ -393,7 +385,6 @@ function abrirProducto(id) {
   if (!p) return;
   tallaSeleccionada = null;
 
-  // ✅ CORREGIDO: galería funcional con imágenes reales o iconos
   const fotos = p.fotos && p.fotos.length > 0
     ? p.fotos
     : [{ imagen_url: null, icono: p.icono || '👗' }];
@@ -410,7 +401,6 @@ function abrirProducto(id) {
     return `<div class="miniatura ${i === 0 ? 'active' : ''}" onclick="cambiarFoto(this, '${f.imagen_url || ''}', '${p.icono || '👗'}')">${content}</div>`;
   }).join('');
 
-  // ✅ CORREGIDO: tallas como objetos {nombre, disponible}
   const tallasArr = p.tallas || [];
   const tallasHTML = tallasArr.map(t => {
     const nombre = typeof t === 'string' ? t : t.nombre;
@@ -469,7 +459,6 @@ function cerrarProducto() {
   document.body.style.overflow = "";
 }
 
-// ✅ CORREGIDO: cambiarFoto ahora realmente cambia la imagen principal
 function cambiarFoto(el, imgUrl, icono) {
   const main = document.getElementById("galeriaMain");
   if (imgUrl) {
@@ -552,7 +541,6 @@ function sortProducts(valor) {
 // CARRITO
 // =====================
 function addToCart(item) {
-  // ✅ AÑADIDO: agrupar items iguales (mismo producto + talla)
   const existente = carrito.find(i => i.id === item.id && i.talla === item.talla);
   if (existente) {
     existente.cantidad = (existente.cantidad || 1) + 1;
@@ -756,7 +744,6 @@ async function iniciarPagoEpayco() {
   const telefono = document.getElementById('chkTelefono').value.trim();
   const ciudad = document.getElementById('chkCiudad').value.trim();
   const direccion = document.getElementById('chkDireccion').value.trim();
-  // ✅ CORREGIDO: el email puede ser del input del guest o del usuario logueado
   const emailInput = document.getElementById('chkEmail');
   const email = usuarioActual
     ? usuarioActual.email
@@ -781,7 +768,6 @@ async function iniciarPagoEpayco() {
   const pago = document.querySelector('input[name="pago"]:checked')?.value || 'tarjeta';
   const apto = document.getElementById('chkApto')?.value || '';
 
-  // Primero crear el pedido para obtener el pedido_id
   const pedidoRes = await apiCall('/pedidos/', 'POST', {
     nombre_cliente: nombre,
     email_cliente: email,
@@ -803,7 +789,6 @@ async function iniciarPagoEpayco() {
 
   const pedidoId = pedidoRes.pedido_id;
 
-  // ✅ CORREGIDO: si el método de pago es efectivo, no abrir ePayco
   if (pago === 'efectivo') {
     carrito = [];
     guardarCarrito();
@@ -813,11 +798,16 @@ async function iniciarPagoEpayco() {
     return;
   }
 
-  // Abrir checkout de ePayco con el pedido_id en extra1
+  // ---------------------------------------------------------------
+  // EPAYCO
+  // test: true  → modo prueba, no cobra dinero real (para desarrollo)
+  // test: false → producción, cobra dinero real (para lanzamiento)
+  // Cambiar en Railway la variable EPAYCO_TEST=False cuando estés lista
+  // ---------------------------------------------------------------
   try {
     const handler = ePayco.checkout.configure({
       key: '90b036e7e0f51b21c0fd0160346e9c5c',
-      test: true
+      test: true  // ← Cambiar a false cuando la tienda esté lista para ventas reales
     });
 
     handler.open({
@@ -833,9 +823,10 @@ async function iniciarPagoEpayco() {
       name_billing: nombre,
       address_billing: direccion,
       mobilephone_billing: telefono,
-      extra1: String(pedidoId), // ✅ Para que el webhook lo identifique
+      extra1: String(pedidoId),
       response: window.location.href,
-      confirmation: 'http://127.0.0.1:8000/api/epayco/confirmacion/',
+      // URL del servidor de Railway — ePayco llama aquí para confirmar el pago
+      confirmation: 'https://web-production-3b3ef.up.railway.app/api/epayco/confirmacion/',
       onSuccess: function() {
         carrito = [];
         guardarCarrito();
@@ -851,7 +842,6 @@ async function iniciarPagoEpayco() {
       }
     });
   } catch (e) {
-    // ePayco no disponible (sin internet, bloqueado, etc.)
     carrito = [];
     guardarCarrito();
     actualizarCarrito();
@@ -869,7 +859,6 @@ function toggleCheckout() {
   cerrarTodosLosPaneles();
   if (!open) {
     actualizarCheckout();
-    // Pre-llenar con datos del usuario logueado
     if (usuarioActual) {
       const chkNombre = document.getElementById('chkNombre');
       if (chkNombre && !chkNombre.value) chkNombre.value = usuarioActual.nombre || '';
@@ -922,7 +911,6 @@ async function subscribe() {
 function trackOrder() {
   const n = document.getElementById('trackNum').value.trim();
   if (!n) { mostrarNotificacion('Ingresa un número de guía'); return; }
-  // Abrir rastreo en Coordinadora por defecto
   window.open(`https://www.coordinadora.com/rastreo?guia=${n}`, '_blank');
 }
 
@@ -1028,7 +1016,7 @@ const capitalizar = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
 // =====================
 // INICIAR
 // =====================
-actualizarCarrito(); // Restaurar carrito persistido
+actualizarCarrito();
 renderProductos(productos);
 checkCookies();
 verificarSesion();
