@@ -1872,3 +1872,258 @@ footer {
   height: 100%;
   object-fit: cover;
 }
+
+/* =====================================================
+   NUEVAS ADICIONES — PRODUCCIÓN
+   (Agrega esto al final del styles.css existente)
+===================================================== */
+
+/* ─── BÚSQUEDA ───────────────────────────────────────── */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 340px;
+}
+
+.search-input {
+  width: 100%;
+  padding: .45rem 2.5rem .45rem 1rem;
+  font-size: .65rem;
+  letter-spacing: .1em;
+  font-family: var(--font-body);
+  border: .5px solid var(--gris-200);
+  background: none;
+  color: var(--negro);
+  outline: none;
+  transition: border-color .2s;
+}
+
+.search-input:focus { border-color: var(--negro); }
+.search-input::placeholder { color: var(--gris-400); }
+
+.search-icon {
+  position: absolute;
+  right: .75rem;
+  color: var(--gris-400);
+  font-size: .85rem;
+  pointer-events: none;
+}
+
+/* ─── CUPÓN EN CHECKOUT ─────────────────────────────── */
+.cupon-wrap {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+
+.cupon-input {
+  flex: 1;
+  padding: .65rem 1rem;
+  font-size: .75rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-family: var(--font-body);
+  border: .5px solid var(--gris-200);
+  background: none;
+  color: var(--negro);
+  outline: none;
+  transition: border-color .2s;
+}
+
+.cupon-input:focus { border-color: var(--negro); }
+.cupon-input::placeholder { text-transform: none; letter-spacing: .05em; color: var(--gris-400); }
+
+.cupon-btn {
+  padding: .65rem 1.25rem;
+  font-size: .62rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  border: .5px solid var(--negro);
+  background: none;
+  color: var(--negro);
+  cursor: pointer;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  transition: all .2s;
+}
+
+.cupon-btn:hover { background: var(--negro); color: var(--blanco); }
+
+.cupon-feedback {
+  font-size: .7rem;
+  padding: .5rem .75rem;
+  margin-bottom: .75rem;
+  display: none;
+}
+
+.cupon-feedback.ok {
+  display: block;
+  background: #eafaf1;
+  color: #1a7a40;
+  border-left: 3px solid #2ecc71;
+}
+
+.cupon-feedback.error {
+  display: block;
+  background: #fdf0f0;
+  color: #8b1c1c;
+  border-left: 3px solid #e74c3c;
+}
+
+/* ─── ENVÍO EN CHECKOUT ─────────────────────────────── */
+.envio-info {
+  font-size: .7rem;
+  color: var(--gris-400);
+  padding: .4rem 0;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+.envio-gratis { color: #1a7a40; font-weight: 500; }
+
+/* ─── ESTADOS DE CARGA EN BOTONES ───────────────────── */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+  opacity: .75;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+
+.btn-primary.btn-loading::after { border-color: rgba(255,255,255,.4); border-top-color: #fff; }
+.btn-outline.btn-loading::after { border-color: rgba(0,0,0,.2); border-top-color: var(--negro); }
+
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+/* ─── VALIDACIÓN DE FORMULARIOS ─────────────────────── */
+.form-input.error,
+.cupon-input.error {
+  border-color: #e74c3c;
+  background: #fdf8f8;
+}
+
+.form-input.success {
+  border-color: #2ecc71;
+}
+
+.field-error {
+  font-size: .62rem;
+  color: #e74c3c;
+  margin-top: .3rem;
+  display: none;
+}
+
+.field-error.visible { display: block; }
+
+/* ─── PAGINACIÓN / CARGAR MÁS ───────────────────────── */
+.load-more-wrap {
+  text-align: center;
+  padding: 2.5rem 0 1rem;
+}
+
+.btn-load-more {
+  padding: .75rem 3rem;
+  font-size: .65rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  border: .5px solid var(--negro);
+  background: none;
+  color: var(--negro);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all .25s;
+}
+
+.btn-load-more:hover { background: var(--negro); color: var(--blanco); }
+.btn-load-more:disabled { opacity: .4; cursor: default; }
+
+.products-counter {
+  text-align: center;
+  font-size: .65rem;
+  letter-spacing: .12em;
+  color: var(--gris-400);
+  padding: .5rem 0 2rem;
+}
+
+/* ─── MODAL CONTRASEÑA OLVIDADA ─────────────────────── */
+.form-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: .68rem;
+  color: var(--gris-400);
+  padding: 0;
+  text-decoration: underline;
+  transition: color .2s;
+}
+
+.form-link-btn:hover { color: var(--negro); }
+
+/* ─── TOAST MEJORADO ────────────────────────────────── */
+.notify.success { background: #1a7a40; }
+.notify.error   { background: #8b1c1c; }
+.notify.warning { background: #854F0B; }
+
+/* ─── ESTADO ENVIADO / CONFIRMADO ───────────────────── */
+.pedido-estado.confirmado { border-color: #3498db; color: #3498db; }
+.pedido-estado.preparando { border-color: #e67e22; color: #e67e22; }
+.pedido-estado.pendiente  { border-color: var(--gris-400); color: var(--gris-400); }
+
+/* ─── RESUMEN PAGO EXITOSO ──────────────────────────── */
+.pago-exitoso {
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.pago-exitoso-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.pago-exitoso-titulo {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 300;
+  margin-bottom: .75rem;
+}
+
+.pago-exitoso-num {
+  font-size: .65rem;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--gris-400);
+  margin-bottom: 1.5rem;
+}
+
+/* ─── PANTALLA PASSWORD RESET ───────────────────────── */
+.reset-panel {
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+
+/* ─── RESPONSIVE ADICIONES ──────────────────────────── */
+@media (max-width: 768px) {
+  .search-wrap { max-width: 100%; }
+  .cupon-wrap { flex-direction: column; }
+  .cupon-btn { width: 100%; text-align: center; }
+  .filters { gap: .5rem; }
+  .filter-header { flex-direction: column; align-items: flex-start; gap: .75rem; }
+}
