@@ -4,7 +4,7 @@
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://127.0.0.1:8000/api'
   : 'https://web-production-3b3ef.up.railway.app/api';
-  
+
 const getToken = () => localStorage.getItem('akov_token');
 const getRefreshToken = () => localStorage.getItem('akov_refresh');
 const setToken = t => localStorage.setItem('akov_token', t);
@@ -76,104 +76,71 @@ async function cerrarSesionSilencioso() {
 }
 
 // =====================
-// PRODUCTOS (datos de respaldo mientras carga la API)
+// PRODUCTOS — datos de respaldo (SOLO se usan si la API no responde)
+// Normalizados con la MISMA forma que produce mapearProductoAPI(), para que
+// renderProductos() y abrirProducto() funcionen idénticos en ambos casos.
 // =====================
-const PRODUCTOS_DATA = [
+const PRODUCTOS_DATA_MOCK = [
   {
-    id: 1, nombre: "Blazer Oversized", cat: "chaquetas", genero: "mujer",
-    color: "negro", fit: "holgada", material: "lana", precio: 320000,
-    ventas: 142, tag: "new", icono: "🧥",
-    tallas: [{nombre:"XS",disponible:true},{nombre:"S",disponible:true},{nombre:"M",disponible:true},{nombre:"L",disponible:true},{nombre:"XL",disponible:true}],
+    id: 1, nombre: "Blazer Oversized", slug: null, cat: "chaquetas", categoriaNombre: "Chaquetas", genero: "mujer",
+    precio: 320000, precioOriginal: null, enOferta: false, destacado: true, tag: "new", icono: "🧥", foto: null,
+    tallas: [{ nombre: "XS", disponible: true }, { nombre: "S", disponible: true }, { nombre: "M", disponible: true }, { nombre: "L", disponible: true }, { nombre: "XL", disponible: true }],
     descripcion: "Blazer oversized en lana premium. Corte relajado con hombros caídos. Forro interior suave."
   },
   {
-    id: 2, nombre: "Camisa Oxford", cat: "camisas", genero: "hombre",
-    color: "blanco", fit: "regular", material: "algodón", precio: 98000,
-    ventas: 380, tag: "", icono: "👔",
-    tallas: [{nombre:"S",disponible:true},{nombre:"M",disponible:true},{nombre:"L",disponible:true},{nombre:"XL",disponible:true},{nombre:"XXL",disponible:false}],
+    id: 2, nombre: "Camisa Oxford", slug: null, cat: "camisas", categoriaNombre: "Camisas", genero: "hombre",
+    precio: 98000, precioOriginal: null, enOferta: false, destacado: false, tag: "", icono: "👔", foto: null,
+    tallas: [{ nombre: "S", disponible: true }, { nombre: "M", disponible: true }, { nombre: "L", disponible: true }, { nombre: "XL", disponible: true }, { nombre: "XXL", disponible: false }],
     descripcion: "Camisa Oxford 100% algodón. Tejido resistente y transpirable. Cuello button-down."
   },
   {
-    id: 3, nombre: "Vestido Midi Seda", cat: "vestidos", genero: "mujer",
-    color: "negro", fit: "ajustada", material: "seda", precio: 285000, precioOriginal: 398000,
-    ventas: 95, tag: "sale", icono: "👗",
-    tallas: [{nombre:"XS",disponible:false},{nombre:"S",disponible:true},{nombre:"M",disponible:true},{nombre:"L",disponible:true}],
+    id: 3, nombre: "Vestido Midi Seda", slug: null, cat: "vestidos", categoriaNombre: "Vestidos", genero: "mujer",
+    precio: 285000, precioOriginal: 398000, enOferta: true, destacado: false, tag: "sale", icono: "👗", foto: null,
+    tallas: [{ nombre: "XS", disponible: false }, { nombre: "S", disponible: true }, { nombre: "M", disponible: true }, { nombre: "L", disponible: true }],
     descripcion: "Vestido midi en seda natural. Caída fluida y elegante. Escote en V sutil."
   },
   {
-    id: 4, nombre: "Pantalón Wide Leg", cat: "pantalones", genero: "mujer",
-    color: "beige", fit: "holgada", material: "lino", precio: 175000,
-    ventas: 210, tag: "", icono: "👖",
-    tallas: [{nombre:"XS",disponible:true},{nombre:"S",disponible:true},{nombre:"M",disponible:true},{nombre:"L",disponible:true},{nombre:"XL",disponible:true}],
+    id: 4, nombre: "Pantalón Wide Leg", slug: null, cat: "pantalones", categoriaNombre: "Pantalones", genero: "mujer",
+    precio: 175000, precioOriginal: null, enOferta: false, destacado: false, tag: "", icono: "👖", foto: null,
+    tallas: [{ nombre: "XS", disponible: true }, { nombre: "S", disponible: true }, { nombre: "M", disponible: true }, { nombre: "L", disponible: true }, { nombre: "XL", disponible: true }],
     descripcion: "Pantalón wide leg en lino premium. Tiro alto con cinturilla elástica."
   },
   {
-    id: 5, nombre: "Chaqueta Denim", cat: "chaquetas", genero: "hombre",
-    color: "azul", fit: "regular", material: "denim", precio: 248000, precioOriginal: 310000,
-    ventas: 167, tag: "sale", icono: "🧥",
-    tallas: [{nombre:"S",disponible:false},{nombre:"M",disponible:true},{nombre:"L",disponible:true},{nombre:"XL",disponible:true}],
+    id: 5, nombre: "Chaqueta Denim", slug: null, cat: "chaquetas", categoriaNombre: "Chaquetas", genero: "hombre",
+    precio: 248000, precioOriginal: 310000, enOferta: true, destacado: false, tag: "sale", icono: "🧥", foto: null,
+    tallas: [{ nombre: "S", disponible: false }, { nombre: "M", disponible: true }, { nombre: "L", disponible: true }, { nombre: "XL", disponible: true }],
     descripcion: "Chaqueta denim clásica con lavado vintage. Bolsillos frontales y en pecho."
   },
   {
-    id: 6, nombre: "Blusa de Seda", cat: "blusas", genero: "mujer",
-    color: "blanco", fit: "holgada", material: "seda", precio: 142000,
-    ventas: 89, tag: "new", icono: "👚",
-    tallas: [{nombre:"XS",disponible:true},{nombre:"S",disponible:true},{nombre:"M",disponible:true},{nombre:"L",disponible:true},{nombre:"XL",disponible:true}],
+    id: 6, nombre: "Blusa de Seda", slug: null, cat: "blusas", categoriaNombre: "Blusas", genero: "mujer",
+    precio: 142000, precioOriginal: null, enOferta: false, destacado: true, tag: "new", icono: "👚", foto: null,
+    tallas: [{ nombre: "XS", disponible: true }, { nombre: "S", disponible: true }, { nombre: "M", disponible: true }, { nombre: "L", disponible: true }, { nombre: "XL", disponible: true }],
     descripcion: "Blusa holgada en seda natural. Mangas largas con puños. Cuello redondo."
-  },
-  {
-    id: 7, nombre: "Camisa Lino Manga", cat: "camisas", genero: "hombre",
-    color: "beige", fit: "regular", material: "lino", precio: 115000,
-    ventas: 303, tag: "", icono: "👕",
-    tallas: [{nombre:"S",disponible:true},{nombre:"M",disponible:true},{nombre:"L",disponible:true},{nombre:"XL",disponible:true},{nombre:"XXL",disponible:true}],
-    descripcion: "Camisa manga larga en lino 100%. Ligera y transpirable."
-  },
-  {
-    id: 8, nombre: "Vestido Mini", cat: "vestidos", genero: "mujer",
-    color: "negro", fit: "ajustada", material: "algodón", precio: 195000,
-    ventas: 178, tag: "", icono: "👗",
-    tallas: [{nombre:"XS",disponible:true},{nombre:"S",disponible:true},{nombre:"M",disponible:true},{nombre:"L",disponible:true}],
-    descripcion: "Vestido mini ajustado en algodón stretch. Sin mangas con escote cuadrado."
-  },
-  {
-    id: 9, nombre: "Pantalón Chino", cat: "pantalones", genero: "hombre",
-    color: "beige", fit: "regular", material: "algodón", precio: 138000, precioOriginal: 180000,
-    ventas: 445, tag: "sale", icono: "👖",
-    tallas: [{nombre:"28",disponible:false},{nombre:"30",disponible:true},{nombre:"32",disponible:true},{nombre:"34",disponible:true},{nombre:"36",disponible:true}],
-    descripcion: "Pantalón chino slim en algodón. Tiro medio con cierre frontal."
-  },
-  {
-    id: 10, nombre: "Sudadera Niño", cat: "camisas", genero: "niño",
-    color: "gris", fit: "regular", material: "algodón", precio: 75000,
-    ventas: 220, tag: "new", icono: "👕",
-    tallas: [{nombre:"2",disponible:true},{nombre:"4",disponible:true},{nombre:"6",disponible:true},{nombre:"8",disponible:true},{nombre:"10",disponible:true},{nombre:"12",disponible:true}],
-    descripcion: "Sudadera cómoda para niños en algodón suave."
-  },
-  {
-    id: 11, nombre: "Vestido Niña", cat: "vestidos", genero: "niño",
-    color: "blanco", fit: "regular", material: "algodón", precio: 89000,
-    ventas: 130, tag: "", icono: "👗",
-    tallas: [{nombre:"2",disponible:false},{nombre:"4",disponible:true},{nombre:"6",disponible:true},{nombre:"8",disponible:true},{nombre:"10",disponible:true},{nombre:"12",disponible:true}],
-    descripcion: "Vestido infantil en algodón con bordados florales."
-  },
-  {
-    id: 12, nombre: "Abrigo Clásico", cat: "chaquetas", genero: "mujer",
-    color: "negro", fit: "ajustada", material: "lana", precio: 485000, precioOriginal: 620000,
-    ventas: 58, tag: "sale", icono: "🧥",
-    tallas: [{nombre:"XS",disponible:false},{nombre:"S",disponible:true},{nombre:"M",disponible:true},{nombre:"L",disponible:true},{nombre:"XL",disponible:false}],
-    descripcion: "Abrigo largo en mezcla de lana premium. Corte estructurado con botonadura doble."
   }
 ];
 
 // =====================
 // ESTADO GLOBAL
 // =====================
-let productos = [...PRODUCTOS_DATA];
-let filtroActivo = "all";
+let productos = [];
+let categoriasDisponibles = [];
+let modoRespaldo = false; // true cuando la API no responde y usamos PRODUCTOS_DATA_MOCK
 let carrito = JSON.parse(localStorage.getItem('akov_carrito') || '[]');
 let favoritos = [];
 let usuarioActual = null;
 let tallaSeleccionada = null;
+let productoDetalleActual = null; // producto completo cargado por abrirProducto()
+let searchTimer = null;
+
+// Estado de filtros — dimensiones independientes (evita el bug de un solo
+// string 'filtroActivo' donde 'oferta' pisaba a 'genero' y viceversa).
+let filtros = {
+  genero: 'all',   // 'all' | 'mujer' | 'hombre' | 'unisex'
+  categoria: '',   // slug de categoría, '' = todas
+  enOferta: false, // true = solo productos en oferta
+  busqueda: '',    // texto de búsqueda
+  orden: '-creado' // coincide 1:1 con los <option value> del <select> de orden
+};
 
 // =====================
 // PERSISTIR CARRITO
@@ -183,32 +150,187 @@ function guardarCarrito() {
 }
 
 // =====================
-// CARGAR PRODUCTOS DESDE API
+// MAPEO API → MODELO DE VISTA
+// Traduce los campos reales de ProductoListSerializer al objeto que
+// consume el resto del archivo. Si el backend agrega/renombra un campo,
+// este es el ÚNICO lugar que hay que tocar.
+// =====================
+function mapearProductoAPI(p) {
+  const precioBase = parseFloat(p.precio);
+  const precioVigente = parseFloat(p.precio_vigente ?? p.precio);
+  return {
+    id: p.id,
+    nombre: p.nombre,
+    slug: p.slug,
+    cat: p.categoria_slug || '',
+    categoriaNombre: p.categoria_nombre || '',
+    genero: p.genero,
+    precio: precioVigente,
+    precioOriginal: p.en_oferta ? precioBase : null,
+    enOferta: !!p.en_oferta,
+    destacado: !!p.destacado,
+    tag: p.en_oferta ? 'sale' : (p.destacado ? 'new' : ''),
+    foto: p.foto_principal || null,
+    icono: p.foto_principal ? null : '👗',
+    // Estos tres solo existen en el detalle; se completan al abrir el modal.
+    descripcion: undefined,
+    tallas: undefined,
+    fotos: undefined,
+  };
+}
+
+// =====================
+// CARGAR CATEGORÍAS DESDE API (chip "Todos" dinámico)
+// =====================
+async function cargarCategoriasAPI() {
+  try {
+    const res = await apiCall('/categorias/');
+    if (!Array.isArray(res)) {
+      console.error('No se pudieron cargar las categorías: respuesta inesperada', res);
+      return;
+    }
+    categoriasDisponibles = res;
+    renderChipsCategoria();
+  } catch (e) {
+    console.error('Error cargando categorías:', e);
+  }
+}
+
+function renderChipsCategoria() {
+  const barra = document.getElementById('filterBar');
+  const chipTodos = barra.querySelector('[data-cat="true"]');
+  if (!chipTodos) return;
+
+  // Elimina chips de categoría inyectados en una carga previa (evita duplicados
+  // si cargarCategoriasAPI() se vuelve a invocar).
+  barra.querySelectorAll('.filter-chip[data-cat-slug]').forEach(el => el.remove());
+
+  const fragmentos = categoriasDisponibles.map(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-chip';
+    btn.setAttribute('data-cat', 'true');
+    btn.setAttribute('data-cat-slug', cat.slug);
+    btn.textContent = cat.nombre;
+    btn.addEventListener('click', () => setFilterCat(btn, cat.slug));
+    return btn;
+  });
+
+  fragmentos.forEach(btn => chipTodos.insertAdjacentElement('afterend', btn));
+}
+
+// =====================
+// CARGAR PRODUCTOS DESDE API (con filtros/orden aplicados en el servidor)
 // =====================
 async function cargarProductosAPI() {
-  const res = await apiCall('/productos/');
-  if (res && Array.isArray(res) && res.length > 0) {
-    productos = res.map(p => ({
-      id: p.id,
-      nombre: p.nombre,
-      slug: p.slug,
-      cat: p.categoria_slug || 'general',
-      genero: p.genero,
-      color: p.color,
-      fit: p.fit,
-      material: p.material,
-      precio: parseFloat(p.precio),
-      precioOriginal: p.precio_original ? parseFloat(p.precio_original) : null,
-      ventas: p.ventas,
-      tag: p.tiene_descuento ? 'sale' : (p.nuevo ? 'new' : ''),
-      foto: p.foto_principal || null,
-      fotoModelo: p.foto_modelo || null,
-      icono: p.foto_principal ? null : '👗',
-      tallas: p.tallas || [],
-      descripcion: p.descripcion,
-    }));
-    renderProductos(obtenerListaFiltrada());
+  const grid = document.getElementById('productsGrid');
+  const contador = document.getElementById('resultCount');
+  contador.textContent = 'Cargando…';
+
+  try {
+    const params = new URLSearchParams();
+    params.set('page_size', '60');
+    if (filtros.genero && filtros.genero !== 'all') params.set('genero', filtros.genero);
+    if (filtros.categoria) params.set('categoria', filtros.categoria);
+    if (filtros.enOferta) params.set('en_oferta', '1');
+    if (filtros.busqueda) params.set('q', filtros.busqueda);
+    if (filtros.orden) params.set('orden', filtros.orden);
+
+    const res = await apiCall('/productos/?' + params.toString());
+
+    // El backend SIEMPRE devuelve un objeto paginado { results: [...] },
+    // nunca un array plano. Leer .results es obligatorio.
+    if (res && Array.isArray(res.results)) {
+      modoRespaldo = false;
+      productos = res.results.map(mapearProductoAPI);
+      renderProductos(productos);
+    } else {
+      throw new Error('Respuesta de /productos/ con forma inesperada');
+    }
+  } catch (e) {
+    console.error('No se pudo cargar el catálogo desde la API. Usando datos de respaldo:', e);
+    modoRespaldo = true;
+    productos = filtrarLocalmente(PRODUCTOS_DATA_MOCK);
+    renderProductos(productos);
+    mostrarNotificacion('No pudimos conectar con la tienda. Mostrando catálogo de muestra.');
   }
+}
+
+// Filtrado en memoria — SOLO se usa en modoRespaldo, porque los datos mock
+// no pueden pedirle al backend que los filtre.
+function filtrarLocalmente(lista) {
+  let resultado = [...lista];
+  if (filtros.genero !== 'all') resultado = resultado.filter(p => p.genero === filtros.genero);
+  if (filtros.categoria) resultado = resultado.filter(p => p.cat === filtros.categoria);
+  if (filtros.enOferta) resultado = resultado.filter(p => p.enOferta);
+  if (filtros.busqueda) {
+    const q = filtros.busqueda.toLowerCase();
+    resultado = resultado.filter(p => p.nombre.toLowerCase().includes(q));
+  }
+  return resultado;
+}
+
+// Con la API real el filtrado ya viene aplicado desde el servidor; esta
+// función existe para que el resto del código (renders puntuales) tenga
+// un único punto de verdad sin tener que saber si estamos en respaldo o no.
+function obtenerListaFiltrada() {
+  return modoRespaldo ? filtrarLocalmente(PRODUCTOS_DATA_MOCK) : productos;
+}
+
+// =====================
+// FILTROS — chip group 1: género + "En oferta" (mutuamente excluyentes)
+// =====================
+function setFilter(btn, valor) {
+  document.getElementById('filterBar')
+    .querySelectorAll('.filter-chip:not([data-cat])')
+    .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  if (valor === 'oferta') {
+    filtros.enOferta = true;
+  } else {
+    filtros.enOferta = false;
+    filtros.genero = valor;
+  }
+  cargarProductosAPI();
+}
+
+// Usado por enlaces fuera de la barra de filtros (menú, hero, footer).
+function setFilterDirect(valor) {
+  filtros.enOferta = valor === 'oferta';
+  filtros.genero = valor === 'oferta' ? 'all' : valor;
+  cargarProductosAPI();
+  document.getElementById('productos').scrollIntoView({ behavior: 'smooth' });
+}
+
+// =====================
+// FILTROS — chip group 2: categoría (independiente de género/oferta)
+// =====================
+function setFilterCat(btn, valor) {
+  document.getElementById('filterBar')
+    .querySelectorAll('.filter-chip[data-cat]')
+    .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtros.categoria = valor;
+  cargarProductosAPI();
+}
+
+// =====================
+// BÚSQUEDA — con debounce de 350ms para no golpear la API en cada tecla
+// =====================
+function onSearch(valor) {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    filtros.busqueda = valor.trim();
+    cargarProductosAPI();
+  }, 350);
+}
+
+// =====================
+// ORDEN — delega directamente al backend (orden_map en views.py)
+// =====================
+function sortProducts(valor) {
+  filtros.orden = valor || '-creado';
+  cargarProductosAPI();
 }
 
 // =====================
@@ -353,12 +475,11 @@ function renderProductos(lista) {
 
   grid.innerHTML = lista.map(p => `
     <div class="product-card">
-      <div class="product-img" onclick="abrirProducto(${p.id})">
+      <div class="product-img" onclick="abrirProducto('${p.slug || ''}', ${p.id})">
         ${renderImagen(p)}
-        ${p.fotoModelo ? `<img src="${p.fotoModelo}" alt="${p.nombre}" class="product-img-hover" loading="lazy">` : ''}
         ${p.tag ? `<span class="product-tag ${p.tag === 'sale' ? 'sale' : ''}">${p.tag === 'sale' ? 'Oferta' : 'Nuevo'}</span>` : ''}
         <div class="product-actions">
-          <button class="pa-add" onclick="event.stopPropagation(); abrirProducto(${p.id})">Ver producto</button>
+          <button class="pa-add" onclick="event.stopPropagation(); abrirProducto('${p.slug || ''}', ${p.id})">Ver producto</button>
           <button class="pa-fav" onclick="event.stopPropagation(); toggleFav(${p.id})"
             style="color:${favoritos.find(f => f.id === p.id) ? '#c0392b' : 'inherit'}">
             ${favoritos.find(f => f.id === p.id) ? '♥' : '♡'}
@@ -366,7 +487,7 @@ function renderProductos(lista) {
         </div>
       </div>
       <p class="product-name">${p.nombre}</p>
-      <p class="product-meta">${capitalizar(p.genero)} · ${p.fit} · ${p.material}</p>
+      <p class="product-meta">${capitalizar(p.genero)}${p.categoriaNombre ? ' · ' + p.categoriaNombre : ''}</p>
       <p class="product-price">
         ${p.precioOriginal
           ? `<span class="price-original">$${formatPrecio(p.precioOriginal)}</span>
@@ -379,10 +500,49 @@ function renderProductos(lista) {
 
 // =====================
 // MODAL PRODUCTO
+// Ahora es asíncrono: si el producto viene de la API real, pide el
+// detalle completo (fotos, tallas con stock real, descripción) al backend
+// en vez de depender de datos parciales que la lista nunca tuvo.
 // =====================
-function abrirProducto(id) {
-  const p = productos.find(x => x.id === id);
-  if (!p) return;
+async function abrirProducto(slug, idRespaldo) {
+  const contenido = document.getElementById("modalProductoContenido");
+  contenido.innerHTML = '<p style="padding:3rem;text-align:center;color:#999490;font-size:.8rem">Cargando producto…</p>';
+  document.getElementById("productModal").classList.add("open");
+  document.body.style.overflow = "hidden";
+
+  let p;
+  if (slug && !modoRespaldo) {
+    const detalle = await apiCall(`/productos/${encodeURIComponent(slug)}/`);
+    if (!detalle || detalle.error) {
+      contenido.innerHTML = '<p style="padding:3rem;text-align:center;color:#999490;font-size:.8rem">No pudimos cargar este producto. Intenta de nuevo.</p>';
+      return;
+    }
+    p = {
+      id: detalle.id,
+      nombre: detalle.nombre,
+      slug: detalle.slug,
+      cat: detalle.categoria?.slug || '',
+      categoriaNombre: detalle.categoria?.nombre || '',
+      genero: detalle.genero,
+      precio: parseFloat(detalle.precio_vigente ?? detalle.precio),
+      precioOriginal: detalle.en_oferta ? parseFloat(detalle.precio) : null,
+      descripcion: detalle.descripcion,
+      fotos: (detalle.fotos || []).map(f => ({ imagen_url: f.imagen, es_principal: f.es_principal })),
+      tallas: (detalle.tallas || []).map(t => ({ nombre: t.nombre, disponible: t.stock > 0 })),
+      icono: '👗',
+      tag: detalle.en_oferta ? 'sale' : (detalle.destacado ? 'new' : ''),
+    };
+  } else {
+    // Modo respaldo: el producto ya tiene todo lo necesario en PRODUCTOS_DATA_MOCK.
+    p = PRODUCTOS_DATA_MOCK.find(x => x.id === idRespaldo);
+    if (!p) {
+      contenido.innerHTML = '<p style="padding:3rem;text-align:center;color:#999490;font-size:.8rem">Producto no encontrado.</p>';
+      return;
+    }
+    p = { ...p, fotos: [] };
+  }
+
+  productoDetalleActual = p;
   tallaSeleccionada = null;
 
   const fotos = p.fotos && p.fotos.length > 0
@@ -396,23 +556,21 @@ function abrirProducto(id) {
 
   const miniaturasHTML = fotos.map((f, i) => {
     const content = f.imagen_url
-      ? `<img src="${f.imagen_url}" alt="${p.nombre} foto ${i+1}" style="width:100%;height:100%;object-fit:cover">`
+      ? `<img src="${f.imagen_url}" alt="${p.nombre} foto ${i + 1}" style="width:100%;height:100%;object-fit:cover">`
       : `<span style="font-size:1.8rem">${p.icono || '👗'}</span>`;
     return `<div class="miniatura ${i === 0 ? 'active' : ''}" onclick="cambiarFoto(this, '${f.imagen_url || ''}', '${p.icono || '👗'}')">${content}</div>`;
   }).join('');
 
   const tallasArr = p.tallas || [];
-  const tallasHTML = tallasArr.map(t => {
-    const nombre = typeof t === 'string' ? t : t.nombre;
-    const disponible = typeof t === 'string' ? true : t.disponible !== false;
-    return `
-      <button class="talla-btn ${!disponible ? 'agotada' : ''}"
-        ${!disponible ? 'disabled' : `onclick="seleccionarTalla(this,'${nombre}')"`}
-      >${nombre}</button>
-    `;
-  }).join('');
+  const tallasHTML = tallasArr.length
+    ? tallasArr.map(t => `
+        <button class="talla-btn ${!t.disponible ? 'agotada' : ''}"
+          ${!t.disponible ? 'disabled' : `onclick="seleccionarTalla(this,'${t.nombre}')"`}
+        >${t.nombre}</button>
+      `).join('')
+    : '<p style="font-size:.72rem;color:#999490">Sin tallas disponibles por ahora</p>';
 
-  document.getElementById("modalProductoContenido").innerHTML = `
+  contenido.innerHTML = `
     <div class="producto-detalle">
       <div class="producto-galeria">
         <div class="producto-galeria-principal" id="galeriaMain">${fotoMainHTML}</div>
@@ -421,7 +579,7 @@ function abrirProducto(id) {
       <div class="producto-info">
         ${p.tag ? `<span class="product-tag ${p.tag === 'sale' ? 'sale' : ''}" style="display:inline-block;margin-bottom:.75rem">${p.tag === 'sale' ? 'Oferta' : 'Nuevo'}</span>` : ''}
         <h2 class="producto-info-nombre">${p.nombre}</h2>
-        <p class="producto-info-meta">${capitalizar(p.genero)} · ${capitalizar(p.cat)} · ${p.material} · Fit ${p.fit}</p>
+        <p class="producto-info-meta">${capitalizar(p.genero)}${p.categoriaNombre ? ' · ' + p.categoriaNombre : ''}</p>
         <p class="producto-info-precio">
           ${p.precioOriginal
             ? `<span class="price-original">$${formatPrecio(p.precioOriginal)}</span>
@@ -437,7 +595,7 @@ function abrirProducto(id) {
             ${favoritos.find(f => f.id === p.id) ? '♥ Guardado' : '♡ Favorito'}
           </button>
         </div>
-        <p class="producto-desc">${p.descripcion}</p>
+        <p class="producto-desc">${p.descripcion || ''}</p>
         <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:0.5px solid var(--gris-200)">
           <p style="font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gris-400);margin-bottom:.75rem">Envío y devoluciones</p>
           <p style="font-size:0.72rem;color:var(--gris-600);line-height:1.8;font-weight:300">
@@ -449,14 +607,12 @@ function abrirProducto(id) {
       </div>
     </div>
   `;
-
-  document.getElementById("productModal").classList.add("open");
-  document.body.style.overflow = "hidden";
 }
 
 function cerrarProducto() {
   document.getElementById("productModal").classList.remove("open");
   document.body.style.overflow = "";
+  productoDetalleActual = null;
 }
 
 function cambiarFoto(el, imgUrl, icono) {
@@ -478,63 +634,22 @@ function seleccionarTalla(btn, talla) {
 
 function agregarDesdeDetalle(id) {
   if (!tallaSeleccionada) { mostrarNotificacion("Selecciona una talla primero"); return; }
-  const p = productos.find(x => x.id === id);
-  addToCart({ id: p.id, nombre: p.nombre, precio: p.precio, foto: p.foto, icono: p.icono || '👗', talla: tallaSeleccionada });
+  const p = productoDetalleActual;
+  if (!p || p.id !== id) { mostrarNotificacion("Ocurrió un error, vuelve a abrir el producto"); return; }
+  addToCart({
+    id: p.id,
+    nombre: p.nombre,
+    precio: p.precio,
+    foto: p.fotos && p.fotos[0] ? p.fotos[0].imagen_url : null,
+    icono: p.icono || '👗',
+    talla: tallaSeleccionada
+  });
   cerrarProducto();
 }
 
 function actualizarBtnFav(id) {
   const btn = document.getElementById('btnFavDetalle' + id);
   if (btn) btn.textContent = favoritos.find(f => f.id === id) ? '♥ Guardado' : '♡ Favorito';
-}
-
-// =====================
-// FILTROS
-// =====================
-function setFilter(btn, valor) {
-  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filtroActivo = valor;
-  renderProductos(obtenerListaFiltrada());
-}
-
-function setFilterDirect(valor) {
-  filtroActivo = valor;
-  renderProductos(obtenerListaFiltrada());
-}
-
-function filterBy(valor) {
-  filtroActivo = valor;
-  document.querySelectorAll('.filter-chip').forEach(b => {
-    b.classList.toggle('active', b.textContent.trim().toLowerCase() === valor);
-  });
-  renderProductos(obtenerListaFiltrada());
-  document.getElementById('productos').scrollIntoView({ behavior: 'smooth' });
-}
-
-function obtenerListaFiltrada() {
-  if (filtroActivo === 'all') return productos;
-  if (filtroActivo === 'sale') return productos.filter(p => p.tag === 'sale');
-  return productos.filter(p =>
-    p.genero === filtroActivo || p.cat === filtroActivo || p.color === filtroActivo
-  );
-}
-
-function sortProducts(valor) {
-  let lista = [...obtenerListaFiltrada()];
-  if (valor === 'az') lista.sort((a, b) => a.nombre.localeCompare(b.nombre));
-  else if (valor === 'za') lista.sort((a, b) => b.nombre.localeCompare(a.nombre));
-  else if (valor === 'price-asc') lista.sort((a, b) => a.precio - b.precio);
-  else if (valor === 'price-desc') lista.sort((a, b) => b.precio - a.precio);
-  else if (valor === 'sales') lista.sort((a, b) => b.ventas - a.ventas);
-  else if (valor === 'discount') {
-    lista.sort((a, b) => {
-      const da = a.precioOriginal ? (a.precioOriginal - a.precio) / a.precioOriginal : 0;
-      const db = b.precioOriginal ? (b.precioOriginal - b.precio) / b.precioOriginal : 0;
-      return db - da;
-    });
-  }
-  renderProductos(lista);
 }
 
 // =====================
@@ -619,12 +734,12 @@ async function toggleFav(id) {
     toggleLogin();
     return;
   }
-  const p = productos.find(x => x.id === id);
+  const p = productos.find(x => x.id === id) || (productoDetalleActual && productoDetalleActual.id === id ? productoDetalleActual : null);
   const res = await apiCall(`/favoritos/${id}/`, 'POST');
   if (!res) return;
 
   if (res.accion === 'guardado') {
-    if (!favoritos.find(f => f.id === id)) favoritos.push(p);
+    if (p && !favoritos.find(f => f.id === id)) favoritos.push(p);
   } else {
     favoritos = favoritos.filter(f => f.id !== id);
   }
@@ -638,13 +753,7 @@ async function cargarFavoritosBackend() {
   if (!usuarioActual) return;
   const res = await apiCall('/favoritos/');
   if (!res || !Array.isArray(res)) return;
-  favoritos = res.map(p => ({
-    id: p.id, nombre: p.nombre,
-    precio: parseFloat(p.precio),
-    foto: p.foto_principal || null,
-    icono: p.foto_principal ? null : '👗',
-    tallas: p.tallas || [],
-  }));
+  favoritos = res.map(mapearProductoAPI);
   document.getElementById('favCount').textContent = favoritos.length;
   actualizarFavoritos();
   renderProductos(obtenerListaFiltrada());
@@ -669,7 +778,7 @@ function actualizarFavoritos() {
       </div>
       <div style="display:flex;flex-direction:column;gap:.5rem">
         <button class="btn-primary" style="padding:.4rem .75rem;font-size:.58rem"
-          onclick="abrirProducto(${p.id}); toggleFavoritos()">
+          onclick="abrirProducto('${p.slug || ''}', ${p.id}); toggleFavoritos()">
           Ver producto
         </button>
         <button onclick="toggleFav(${p.id})"
@@ -964,8 +1073,8 @@ function checkCookies() {
 // CERRAR PANELES
 // =====================
 function cerrarTodosLosPaneles() {
-  ['cartOverlay','loginOverlay','favOverlay','pedidosOverlay',
-   'checkoutOverlay','productModal','privacidadModal'].forEach(id => {
+  ['cartOverlay', 'loginOverlay', 'favOverlay', 'pedidosOverlay',
+    'checkoutOverlay', 'productModal', 'privacidadModal'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('open');
   });
@@ -995,8 +1104,8 @@ window.addEventListener('scroll', () => {
 // =====================
 // EVENTOS CLICK FUERA
 // =====================
-['cartOverlay','loginOverlay','favOverlay','pedidosOverlay',
- 'checkoutOverlay','productModal','privacidadModal'].forEach(id => {
+['cartOverlay', 'loginOverlay', 'favOverlay', 'pedidosOverlay',
+  'checkoutOverlay', 'productModal', 'privacidadModal'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', function(e) {
     if (e.target === this) cerrarTodosLosPaneles();
@@ -1017,7 +1126,7 @@ const capitalizar = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
 // INICIAR
 // =====================
 actualizarCarrito();
-renderProductos(productos);
 checkCookies();
 verificarSesion();
+cargarCategoriasAPI();
 cargarProductosAPI();
