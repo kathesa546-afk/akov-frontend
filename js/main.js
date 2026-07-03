@@ -3,7 +3,7 @@
 // =====================
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://127.0.0.1:8000/api'
-  : 'https://web-production-3b3ef.up.railway.app/api';
+  : 'https://api.akov3.com/api';
 
 const getToken = () => localStorage.getItem('akov_token');
 const getRefreshToken = () => localStorage.getItem('akov_refresh');
@@ -935,7 +935,7 @@ async function iniciarPagoEpayco() {
       extra1: String(pedidoId),
       response: window.location.href,
       // URL del servidor de Railway — ePayco llama aquí para confirmar el pago
-      confirmation: 'https://web-production-3b3ef.up.railway.app/api/epayco/confirmacion/',
+      confirmation: 'https://api.akov3.com/api/epayco/confirmacion/',
       onSuccess: function() {
         carrito = [];
         guardarCarrito();
