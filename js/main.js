@@ -457,8 +457,9 @@ function switchTab(tab) {
 // RENDER PRODUCTOS
 // =====================
 function renderImagen(p, clase = 'product-img-inner') {
+  const nombreSeguro = escapeHTML(p.nombre);
   if (p.foto) {
-    return `<img src="${p.foto}" alt="${p.nombre}" class="${clase}" loading="lazy" onerror="this.outerHTML='<span class=\\"${clase}\\">${p.icono || '👗'}</span>'">`;
+    return `<img src="${p.foto}" alt="${nombreSeguro}" class="${clase}" loading="lazy" onerror="this.outerHTML='<span class=\\"${clase}\\">${p.icono || '👗'}</span>'">`;
   }
   return `<span class="${clase}">${p.icono || '👗'}</span>`;
 }
@@ -486,8 +487,8 @@ function renderProductos(lista) {
           </button>
         </div>
       </div>
-      <p class="product-name">${p.nombre}</p>
-      <p class="product-meta">${capitalizar(p.genero)}${p.categoriaNombre ? ' · ' + p.categoriaNombre : ''}</p>
+      <p class="product-name">${escapeHTML(p.nombre)}</p>
+      <p class="product-meta">${capitalizar(p.genero)}${p.categoriaNombre ? ' · ' + escapeHTML(p.categoriaNombre) : ''}</p>
       <p class="product-price">
         ${p.precioOriginal
           ? `<span class="price-original">$${formatPrecio(p.precioOriginal)}</span>
@@ -550,13 +551,14 @@ async function abrirProducto(slug, idRespaldo) {
     : [{ imagen_url: null, icono: p.icono || '👗' }];
 
   const primeraFoto = fotos[0];
+  const nombreSeguro = escapeHTML(p.nombre);
   const fotoMainHTML = primeraFoto.imagen_url
-    ? `<img src="${primeraFoto.imagen_url}" alt="${p.nombre}" id="galeriaMainImg" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${primeraFoto.imagen_url}" alt="${nombreSeguro}" id="galeriaMainImg" style="width:100%;height:100%;object-fit:cover">`
     : `<span id="galeriaMainIcon" style="font-size:5rem">${p.icono || '👗'}</span>`;
 
   const miniaturasHTML = fotos.map((f, i) => {
     const content = f.imagen_url
-      ? `<img src="${f.imagen_url}" alt="${p.nombre} foto ${i + 1}" style="width:100%;height:100%;object-fit:cover">`
+      ? `<img src="${f.imagen_url}" alt="${nombreSeguro} foto ${i + 1}" style="width:100%;height:100%;object-fit:cover">`
       : `<span style="font-size:1.8rem">${p.icono || '👗'}</span>`;
     return `<div class="miniatura ${i === 0 ? 'active' : ''}" onclick="cambiarFoto(this, '${f.imagen_url || ''}', '${p.icono || '👗'}')">${content}</div>`;
   }).join('');
@@ -566,7 +568,7 @@ async function abrirProducto(slug, idRespaldo) {
     ? tallasArr.map(t => `
         <button class="talla-btn ${!t.disponible ? 'agotada' : ''}"
           ${!t.disponible ? 'disabled' : `onclick="seleccionarTalla(this,'${t.nombre}')"`}
-        >${t.nombre}</button>
+        >${escapeHTML(t.nombre)}</button>
       `).join('')
     : '<p style="font-size:.72rem;color:#999490">Sin tallas disponibles por ahora</p>';
 
@@ -578,8 +580,8 @@ async function abrirProducto(slug, idRespaldo) {
       </div>
       <div class="producto-info">
         ${p.tag ? `<span class="product-tag ${p.tag === 'sale' ? 'sale' : ''}" style="display:inline-block;margin-bottom:.75rem">${p.tag === 'sale' ? 'Oferta' : 'Nuevo'}</span>` : ''}
-        <h2 class="producto-info-nombre">${p.nombre}</h2>
-        <p class="producto-info-meta">${capitalizar(p.genero)}${p.categoriaNombre ? ' · ' + p.categoriaNombre : ''}</p>
+        <h2 class="producto-info-nombre">${nombreSeguro}</h2>
+        <p class="producto-info-meta">${capitalizar(p.genero)}${p.categoriaNombre ? ' · ' + escapeHTML(p.categoriaNombre) : ''}</p>
         <p class="producto-info-precio">
           ${p.precioOriginal
             ? `<span class="price-original">$${formatPrecio(p.precioOriginal)}</span>
@@ -595,7 +597,7 @@ async function abrirProducto(slug, idRespaldo) {
             ${favoritos.find(f => f.id === p.id) ? '♥ Guardado' : '♡ Favorito'}
           </button>
         </div>
-        <p class="producto-desc">${p.descripcion || ''}</p>
+        <p class="producto-desc">${limpiarDescripcion(p.descripcion)}</p>
         <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:0.5px solid var(--gris-200)">
           <p style="font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gris-400);margin-bottom:.75rem">Envío y devoluciones</p>
           <p style="font-size:0.72rem;color:var(--gris-600);line-height:1.8;font-weight:300">
@@ -695,12 +697,12 @@ function actualizarCarrito() {
     <div class="cart-item">
       <div class="cart-item-img">
         ${item.foto
-          ? `<img src="${item.foto}" alt="${item.nombre}" style="width:100%;height:100%;object-fit:cover;border-radius:2px">`
+          ? `<img src="${item.foto}" alt="${escapeHTML(item.nombre)}" style="width:100%;height:100%;object-fit:cover;border-radius:2px">`
           : (item.icono || '👕')}
       </div>
       <div style="flex:1">
-        <p class="cart-item-name">${item.nombre}</p>
-        <p class="cart-item-meta">Talla ${item.talla || 'M'}</p>
+        <p class="cart-item-name">${escapeHTML(item.nombre)}</p>
+        <p class="cart-item-meta">Talla ${escapeHTML(item.talla || 'M')}</p>
         <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem">
           <button onclick="cambiarCantidad(${i},-1)" style="background:var(--gris-100);border:none;width:20px;height:20px;cursor:pointer;font-size:.9rem;border-radius:2px">−</button>
           <span style="font-size:.72rem;min-width:16px;text-align:center">${item.cantidad || 1}</span>
@@ -769,11 +771,11 @@ function actualizarFavoritos() {
     <div class="fav-item">
       <div class="fav-item-img">
         ${p.foto
-          ? `<img src="${p.foto}" alt="${p.nombre}" style="width:100%;height:100%;object-fit:cover">`
+          ? `<img src="${p.foto}" alt="${escapeHTML(p.nombre)}" style="width:100%;height:100%;object-fit:cover">`
           : (p.icono || '👗')}
       </div>
       <div style="flex:1">
-        <p class="fav-item-name">${p.nombre}</p>
+        <p class="fav-item-name">${escapeHTML(p.nombre)}</p>
         <p class="fav-item-price">$${formatPrecio(p.precio)}</p>
       </div>
       <div style="display:flex;flex-direction:column;gap:.5rem">
@@ -827,19 +829,18 @@ async function cargarPedidos() {
     <div class="pedido-item">
       <div class="pedido-header">
         <span class="pedido-numero">Pedido #${p.id}</span>
-        <span class="pedido-estado ${p.estado}">${p.estado_display}</span>
+        <span class="pedido-estado ${escapeHTML(p.estado)}">${escapeHTML(ESTADO_LABELS[p.estado] || p.estado)}</span>
       </div>
       <div class="pedido-info">
         📦 ${p.items.length} producto${p.items.length !== 1 ? 's' : ''}<br>
-        📍 ${p.ciudad} — ${p.direccion}<br>
-        💳 ${p.metodo_pago_display}<br>
+        📍 ${escapeHTML(p.ciudad_entrega)} — ${escapeHTML(p.direccion_entrega)}<br>
+        💳 ${escapeHTML(METODO_PAGO_LABELS[p.metodo_pago] || p.metodo_pago)}<br>
         📅 ${new Date(p.creado).toLocaleDateString('es-CO')}
-        ${p.numero_guia ? `<br>🔍 Guía: <strong>${p.numero_guia}</strong>` : ''}
       </div>
       <p class="pedido-total">$${parseFloat(p.total).toLocaleString('es-CO')}</p>
       ${p.items.map(i => `
         <p style="font-size:.68rem;color:var(--gris-400);margin-top:.3rem">
-          · ${i.nombre_producto} — Talla ${i.talla}
+          · ${escapeHTML(i.nombre_producto)} — Talla ${escapeHTML(i.talla)}
         </p>`).join('')}
     </div>
   `).join('');
@@ -990,7 +991,7 @@ function actualizarCheckout() {
 
   el.innerHTML = carrito.map(item => `
     <div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:.5px solid var(--gris-200);font-size:.75rem">
-      <span>${item.nombre} <span style="color:var(--gris-400)">T.${item.talla || 'M'}</span>
+      <span>${escapeHTML(item.nombre)} <span style="color:var(--gris-400)">T.${escapeHTML(item.talla || 'M')}</span>
         ${(item.cantidad || 1) > 1 ? ` <span style="color:var(--gris-400)">×${item.cantidad}</span>` : ''}
       </span>
       <span style="font-family:var(--font-display)">$${formatPrecio(item.precio * (item.cantidad || 1))}</span>
@@ -1121,6 +1122,53 @@ document.addEventListener('keydown', e => {
 // =====================
 const formatPrecio = n => Math.round(n).toLocaleString('es-CO');
 const capitalizar = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+
+// El backend expone 'estado' y 'metodo_pago' como el valor crudo del choice
+// (ej. 'pendiente', 'epayco'), no una versión ya traducida a texto legible.
+const ESTADO_LABELS = {
+  pendiente: 'Pendiente',
+  confirmado: 'Confirmado',
+  cancelado: 'Cancelado',
+};
+const METODO_PAGO_LABELS = {
+  epayco: 'ePayco (PSE/Tarjeta)',
+  efectivo: 'Contra entrega',
+};
+
+// =====================
+// SANITIZACIÓN (auditoría, hallazgo 2.2 — Crítica)
+// Todo texto dinámico que se inserta vía innerHTML (nombres de producto,
+// direcciones escritas por el cliente en el checkout, etc.) pasa por
+// escapeHTML() antes de interpolarse. Esto neutraliza tanto inyección de
+// <script>/onerror= como el "escape" de comillas en atributos.
+// =====================
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+// La descripción del producto es el único campo que queremos mostrar como
+// HTML (para permitir <br>, <b>, <i> si el admin los usa) en vez de texto
+// plano escapado. Se sanitiza con DOMPurify, restringido a un puñado de
+// etiquetas inofensivas — nunca <script>, <img>, <a>, event handlers, etc.
+// Si DOMPurify no cargó por alguna razón, se cae a escapeHTML() para no
+// quedar nunca sin protección.
+function limpiarDescripcion(html) {
+  if (!html) return '';
+  if (window.DOMPurify && typeof window.DOMPurify.sanitize === 'function') {
+    return window.DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'p'],
+      ALLOWED_ATTR: [],
+    });
+  }
+  console.error('DOMPurify no está disponible — usando texto plano como respaldo de seguridad.');
+  return escapeHTML(html);
+}
 
 // =====================
 // INICIAR
