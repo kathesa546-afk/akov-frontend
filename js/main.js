@@ -5,11 +5,15 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
   ? 'http://127.0.0.1:8000/api'
   : 'https://api.akov3.com/api';
 
+// FIX (auditoría, hallazgo 5.1 — Alta): el refresh token YA NO se guarda en
+// localStorage. Ahora vive en una cookie httpOnly que el backend controla
+// (ver _set_refresh_cookie en views.py) — JavaScript no puede leerla ni
+// escribirla, así que un ataque XSS ya no puede robar la sesión completa,
+// solo en el peor caso el access token de vida corta (60 min) que sigue en
+// memoria/localStorage para poder mandarlo en el header Authorization.
 const getToken = () => localStorage.getItem('akov_token');
-const getRefreshToken = () => localStorage.getItem('akov_refresh');
 const setToken = t => localStorage.setItem('akov_token', t);
-const setRefreshToken = t => localStorage.setItem('akov_refresh', t);
-const removeToken = () => { localStorage.removeItem('akov_token'); localStorage.removeItem('akov_refresh'); };
+const removeToken = () => localStorage.removeItem('akov_token');
 const getUsuarioGuardado = () => {
   const u = localStorage.getItem('akov_usuario');
   return u ? JSON.parse(u) : null;
@@ -22,7 +26,10 @@ async function apiCall(endpoint, method = 'GET', data = null, retry = true) {
   const headers = { 'Content-Type': 'application/json' };
   const token = getToken();
   if (token) headers['Authorization'] = 'Bearer ' + token;
-  const opts = { method, headers };
+  // credentials: 'include' es OBLIGATORIO — sin esto el navegador nunca
+  // manda ni recibe la cookie httpOnly de sesión entre akov3.com y
+  // api.akov3.com (son orígenes distintos, aunque compartan dominio raíz).
+  const opts = { method, headers, credentials: 'include' };
   if (data) opts.body = JSON.stringify(data);
 
   try {
@@ -46,19 +53,16 @@ async function apiCall(endpoint, method = 'GET', data = null, retry = true) {
 }
 
 async function refrescarAccess() {
-  const refresh = getRefreshToken();
-  if (!refresh) return false;
   try {
     const res = await fetch(API_URL + '/auth/refresh/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh })
+      credentials: 'include',  // manda la cookie httpOnly con el refresh token
     });
     if (!res.ok) return false;
     const data = await res.json();
     if (data.access) {
       setToken(data.access);
-      if (data.refresh) setRefreshToken(data.refresh);
       return true;
     }
     return false;
@@ -381,7 +385,6 @@ async function loginUser() {
   if (!res.tokens || !res.tokens.access) { mostrarNotificacion('Error del servidor'); return; }
 
   setToken(res.tokens.access);
-  if (res.tokens.refresh) setRefreshToken(res.tokens.refresh);
   setUsuarioGuardado(res.usuario);
   usuarioActual = res.usuario;
   actualizarNavbarUsuario();
@@ -406,7 +409,6 @@ async function registerUser() {
   if (!res.tokens || !res.tokens.access) { mostrarNotificacion('Error del servidor'); return; }
 
   setToken(res.tokens.access);
-  if (res.tokens.refresh) setRefreshToken(res.tokens.refresh);
   setUsuarioGuardado(res.usuario);
   usuarioActual = res.usuario;
   actualizarNavbarUsuario();
@@ -416,10 +418,9 @@ async function registerUser() {
 }
 
 async function cerrarSesion() {
-  const refresh = getRefreshToken();
-  if (refresh) {
-    await apiCall('/auth/logout/', 'POST', { refresh });
-  }
+  // El backend lee y borra la cookie httpOnly directamente — ya no hace
+  // falta (ni es posible) mandarle el refresh token desde JS.
+  await apiCall('/auth/logout/', 'POST');
   removeToken();
   removeUsuario();
   usuarioActual = null;
