@@ -705,9 +705,9 @@ function actualizarCarrito() {
         <p class="cart-item-name">${escapeHTML(item.nombre)}</p>
         <p class="cart-item-meta">Talla ${escapeHTML(item.talla || 'M')}</p>
         <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem">
-          <button onclick="cambiarCantidad(${i},-1)" style="background:var(--gris-100);border:none;width:20px;height:20px;cursor:pointer;font-size:.9rem;border-radius:2px">−</button>
+          <button onclick="cambiarCantidad(${i},-1)" style="background:var(--gris-100);border:none;width:40px;height:40px;cursor:pointer;font-size:1rem;border-radius:2px">−</button>
           <span style="font-size:.72rem;min-width:16px;text-align:center">${item.cantidad || 1}</span>
-          <button onclick="cambiarCantidad(${i},1)" style="background:var(--gris-100);border:none;width:20px;height:20px;cursor:pointer;font-size:.9rem;border-radius:2px">+</button>
+          <button onclick="cambiarCantidad(${i},1)" style="background:var(--gris-100);border:none;width:40px;height:40px;cursor:pointer;font-size:1rem;border-radius:2px">+</button>
         </div>
         <p class="cart-item-price">$${formatPrecio(item.precio * (item.cantidad || 1))}</p>
       </div>

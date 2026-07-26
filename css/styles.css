@@ -195,7 +195,11 @@ body {
 .hamburger {
   display: none;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 5px;
+  min-width: 48px;
+  min-height: 48px;
   background: none;
   border: none;
   cursor: pointer;
@@ -703,6 +707,7 @@ body {
 
 .pa-add {
   flex: 1;
+  min-height: 48px;
   padding: 0.65rem;
   font-size: 0.6rem;
   letter-spacing: 0.12em;
@@ -719,7 +724,8 @@ body {
 .pa-add:hover { background: var(--gris-600); }
 
 .pa-fav {
-  width: 40px;
+  width: 48px;
+  min-height: 48px;
   padding: 0.65rem;
   font-size: 0.9rem;
   border: none;
@@ -1516,7 +1522,7 @@ footer {
 }
 
 .talla-btn {
-  width: 44px; height: 44px;
+  width: 48px; height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2126,4 +2132,47 @@ footer {
   .cupon-btn { width: 100%; text-align: center; }
   .filters { gap: .5rem; }
   .filter-header { flex-direction: column; align-items: flex-start; gap: .75rem; }
+}
+
+/* ─── TABLET (breakpoint intermedio que faltaba) ────────
+   Antes saltaba directo de 4 columnas (desktop) a 2 columnas (≤768px),
+   dejando el rango 769–1024px con tarjetas de producto desproporcionadas. */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cat-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+/* ─── MÓVIL PEQUEÑO (breakpoint que faltaba) ────────────
+   Pantallas <420px (iPhone SE y similares) con 2 columnas quedaban con
+   tarjetas de producto demasiado angostas para leer nombre/precio. */
+@media (max-width: 420px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .hero-title { font-size: 2.6rem; }
+  .product-name { font-size: 0.85rem; }
+  .deal-title { font-size: 2rem; }
+}
+
+/* ─── ACCIONES RÁPIDAS DE PRODUCTO EN TÁCTIL ────────────
+   .product-actions solo se revelaba con :hover, que no existe de forma
+   confiable en pantallas táctiles — los botones "Ver producto" / favorito
+   quedaban prácticamente inalcanzables en móvil. Se muestran siempre por
+   debajo del breakpoint de tablet. */
+@media (max-width: 1024px) {
+  .product-actions {
+    bottom: 0;
+  }
 }
