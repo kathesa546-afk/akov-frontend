@@ -1,0 +1,11 @@
+# ─── Editor / SO ──────────────────────────────────────────────────────────────
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# ─── Por si en el futuro se agrega alguna herramienta de build ───────────────
+node_modules/
+dist/
+.env
+.env.*
