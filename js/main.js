@@ -1195,3 +1195,12 @@ checkCookies();
 verificarSesion();
 cargarCategoriasAPI();
 cargarProductosAPI();
+
+// PWA: registrar el service worker (si el navegador lo soporta — no todos,
+// así que se comprueba antes en vez de asumir).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .catch(err => console.error('No se pudo registrar el service worker:', err));
+  });
+}
