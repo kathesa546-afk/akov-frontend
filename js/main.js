@@ -460,7 +460,7 @@ function switchTab(tab) {
 function renderImagen(p, clase = 'product-img-inner') {
   const nombreSeguro = escapeHTML(p.nombre);
   if (p.foto) {
-    return `<img src="${p.foto}" alt="${nombreSeguro}" class="${clase}" loading="lazy" onerror="this.outerHTML='<span class=\\"${clase}\\">${p.icono || '👗'}</span>'">`;
+    return `<img src="${optimizarImagen(p.foto, 600)}" alt="${nombreSeguro}" class="${clase}" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=\\"${clase}\\">${p.icono || '👗'}</span>'">`;
   }
   return `<span class="${clase}">${p.icono || '👗'}</span>`;
 }
@@ -554,12 +554,12 @@ async function abrirProducto(slug, idRespaldo) {
   const primeraFoto = fotos[0];
   const nombreSeguro = escapeHTML(p.nombre);
   const fotoMainHTML = primeraFoto.imagen_url
-    ? `<img src="${primeraFoto.imagen_url}" alt="${nombreSeguro}" id="galeriaMainImg" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${optimizarImagen(primeraFoto.imagen_url, 800)}" alt="${nombreSeguro}" id="galeriaMainImg" style="width:100%;height:100%;object-fit:cover" decoding="async">`
     : `<span id="galeriaMainIcon" style="font-size:5rem">${p.icono || '👗'}</span>`;
 
   const miniaturasHTML = fotos.map((f, i) => {
     const content = f.imagen_url
-      ? `<img src="${f.imagen_url}" alt="${nombreSeguro} foto ${i + 1}" style="width:100%;height:100%;object-fit:cover">`
+      ? `<img src="${optimizarImagen(f.imagen_url, 150)}" alt="${nombreSeguro} foto ${i + 1}" style="width:100%;height:100%;object-fit:cover" loading="lazy" decoding="async">`
       : `<span style="font-size:1.8rem">${p.icono || '👗'}</span>`;
     return `<div class="miniatura ${i === 0 ? 'active' : ''}" onclick="cambiarFoto(this, '${f.imagen_url || ''}', '${p.icono || '👗'}')">${content}</div>`;
   }).join('');
@@ -621,7 +621,7 @@ function cerrarProducto() {
 function cambiarFoto(el, imgUrl, icono) {
   const main = document.getElementById("galeriaMain");
   if (imgUrl) {
-    main.innerHTML = `<img src="${imgUrl}" alt="foto" style="width:100%;height:100%;object-fit:cover">`;
+    main.innerHTML = `<img src="${optimizarImagen(imgUrl, 800)}" alt="foto" style="width:100%;height:100%;object-fit:cover" decoding="async">`;
   } else {
     main.innerHTML = `<span style="font-size:5rem">${icono}</span>`;
   }
@@ -698,7 +698,7 @@ function actualizarCarrito() {
     <div class="cart-item">
       <div class="cart-item-img">
         ${item.foto
-          ? `<img src="${item.foto}" alt="${escapeHTML(item.nombre)}" style="width:100%;height:100%;object-fit:cover;border-radius:2px">`
+          ? `<img src="${optimizarImagen(item.foto, 100)}" alt="${escapeHTML(item.nombre)}" style="width:100%;height:100%;object-fit:cover;border-radius:2px" loading="lazy" decoding="async">`
           : (item.icono || '👕')}
       </div>
       <div style="flex:1">
@@ -772,7 +772,7 @@ function actualizarFavoritos() {
     <div class="fav-item">
       <div class="fav-item-img">
         ${p.foto
-          ? `<img src="${p.foto}" alt="${escapeHTML(p.nombre)}" style="width:100%;height:100%;object-fit:cover">`
+          ? `<img src="${optimizarImagen(p.foto, 100)}" alt="${escapeHTML(p.nombre)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" decoding="async">`
           : (p.icono || '👗')}
       </div>
       <div style="flex:1">
@@ -1123,6 +1123,22 @@ document.addEventListener('keydown', e => {
 // =====================
 const formatPrecio = n => Math.round(n).toLocaleString('es-CO');
 const capitalizar = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+
+// =====================
+// OPTIMIZACIÓN DE IMÁGENES (Cloudinary)
+// Antes las imágenes se servían en el formato/tamaño que subió el admin,
+// sin aprovechar que Cloudinary (ya usado por el proyecto) puede convertir
+// automáticamente a WebP/AVIF y redimensionar al vuelo insertando
+// parámetros en la URL — sin tocar nada del backend ni volver a subir
+// ninguna imagen.
+// f_auto = el formato más liviano que soporte el navegador (WebP/AVIF/etc)
+// q_auto = calidad ajustada automáticamente sin pérdida visible
+// w_<n>  = ancho máximo, evita mandar una foto de 4000px para una tarjeta
+//          de 300px
+function optimizarImagen(url, ancho) {
+  if (!url || !url.includes('/upload/')) return url; // No es Cloudinary, no tocar
+  return url.replace('/upload/', `/upload/f_auto,q_auto,w_${ancho}/`);
+}
 
 // El backend expone 'estado' y 'metodo_pago' como el valor crudo del choice
 // (ej. 'pendiente', 'epayco'), no una versión ya traducida a texto legible.
