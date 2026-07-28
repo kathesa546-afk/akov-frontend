@@ -471,40 +471,6 @@ body {
 .btn-accent:hover { opacity: 0.85; }
 
 /* =====================
-   MARQUEE
-===================== */
-.marquee-wrap {
-  background: var(--negro);
-  color: var(--blanco);
-  padding: 0.85rem 0;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.marquee-track {
-  display: inline-flex;
-  animation: marquee 26s linear infinite;
-}
-
-.marquee-track span {
-  font-family: var(--font-display);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  padding: 0 2rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 2rem;
-}
-
-.marquee-track span::after {
-  content: '/';
-  color: var(--gris-600);
-  font-weight: 400;
-}
-
-/* =====================
    SECCIONES
 ===================== */
 .section { padding: 5rem 4rem; }
@@ -1694,11 +1660,6 @@ footer {
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
 }
 
 /* =====================
