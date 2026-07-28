@@ -7,7 +7,7 @@
   <title>AKOV — Tienda de Ropa</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0a0a0a">
@@ -90,8 +90,8 @@
   <!-- HERO -->
   <section class="hero">
     <div class="hero-text">
-      <p class="hero-eyebrow">Colección Primavera — Verano 2025</p>
-      <h1 class="hero-title">Viste<br>tu <em>esencia.</em></h1>
+      <p class="hero-season">Primavera — Verano 2025</p>
+      <h1 class="hero-title">Viste<br>tu <span>esencia.</span></h1>
       <p class="hero-sub">Prendas diseñadas para quienes entienden que la elegancia no se grita — se siente.</p>
       <div class="hero-btns">
         <a href="#productos" class="btn-primary">Explorar colección →</a>
@@ -99,25 +99,26 @@
       </div>
     </div>
     <div class="hero-visual">
-      <div class="hero-bg-text">AKOV</div>
-      <div class="hero-badge">Nueva<br>Colección<br>2025</div>
+      <div class="hero-visual-inner">
+        <div class="hero-bg-text">AKOV</div>
+      </div>
     </div>
   </section>
 
   <!-- MARQUEE -->
   <div class="marquee-wrap">
     <div class="marquee-track">
-      <span>Chaquetas <b>✦</b></span><span>Camisas <b>✦</b></span><span>Vestidos <b>✦</b></span>
-      <span>Pantalones <b>✦</b></span><span>Blusas <b>✦</b></span><span>Accesorios <b>✦</b></span>
-      <span>Chaquetas <b>✦</b></span><span>Camisas <b>✦</b></span><span>Vestidos <b>✦</b></span>
-      <span>Pantalones <b>✦</b></span><span>Blusas <b>✦</b></span><span>Accesorios <b>✦</b></span>
+      <span>Chaquetas</span><span>Camisas</span><span>Vestidos</span>
+      <span>Pantalones</span><span>Blusas</span><span>Accesorios</span>
+      <span>Chaquetas</span><span>Camisas</span><span>Vestidos</span>
+      <span>Pantalones</span><span>Blusas</span><span>Accesorios</span>
     </div>
   </div>
 
   <!-- CATEGORÍAS (conteos dinámicos) -->
   <section class="section" id="colecciones">
     <div class="section-header">
-      <h2 class="section-title">Explora<br><em>categorías</em></h2>
+      <h2 class="section-title">Explora<br><span>categorías</span></h2>
       <a href="#productos" class="section-link">Ver todo →</a>
     </div>
     <div class="cat-grid" id="catGrid">
@@ -188,7 +189,7 @@
   <!-- DESCUENTOS -->
   <section class="deals-strip" id="descuentos">
     <div class="deals-left">
-      <h2 class="deal-title">Hasta <em>40%</em><br>de descuento</h2>
+      <h2 class="deal-title">Hasta <span>40%</span><br>de descuento</h2>
       <p class="deal-sub">Prendas seleccionadas con los mejores precios de la temporada. Por tiempo limitado.</p>
       <a href="#productos" class="btn-accent" onclick="setFilterDirect('oferta')">Ver descuentos →</a>
     </div>
@@ -214,9 +215,7 @@
   <!-- SUSCRIPCIÓN -->
   <section class="sub-section">
     <div class="sub-bg-text">AKOV</div>
-    <p class="sub-eyebrow">Suscríbete</p>
-    <h2 class="sub-title">Tu primera compra con</h2>
-    <div class="sub-disc">15% de descuento</div>
+    <h2 class="sub-title">Tu primera compra con <span>15% off</span></h2>
     <p class="sub-sub">Acceso anticipado a nuevas colecciones y descuentos exclusivos.<br>Usa el código <strong>BIENVENIDO15</strong> en el checkout.</p>
     <div class="sub-form">
       <input type="email" class="sub-input" placeholder="tu@correo.com" id="subEmail">
@@ -515,5 +514,9 @@
 
   <script src="https://checkout.epayco.co/checkout.js"></script>
   <script src="js/main.js"></script>
+  <!-- GSAP + ScrollTrigger: efectos de zoom-con-scroll en hero y categorías -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="js/animations.js"></script>
 </body>
 </html>
