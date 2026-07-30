@@ -195,9 +195,49 @@ async function cargarCategoriasAPI() {
     }
     categoriasDisponibles = res;
     renderChipsCategoria();
+    renderCategoriasHome();
   } catch (e) {
     console.error('Error cargando categorías:', e);
   }
+}
+
+// Pinta el grid de categorías del home (antes hardcodeado a Mujer/Hombre/
+// Unisex — la tienda ahora solo vende ropa de mujer, así que la única
+// segmentación real son las categorías de prenda). Toma hasta 5 categorías
+// reales desde /api/categorias/, la primera ocupa el tile grande.
+function renderCategoriasHome() {
+  const grid = document.getElementById('catGrid');
+  if (!grid) return;
+
+  if (!categoriasDisponibles.length) {
+    grid.innerHTML = '<p style="grid-column:1/-1;padding:2rem;text-align:center;color:var(--gris-400);font-size:.8rem">Aún no hay categorías creadas en el panel de administración.</p>';
+    return;
+  }
+
+  const categorias = categoriasDisponibles.slice(0, 5);
+
+  grid.innerHTML = categorias.map((cat, i) => `
+    <div class="cat-item ${i === 0 ? 'cat-large' : ''}" onclick="irACategoria('${cat.slug}')">
+      <div class="cat-bg" ${cat.imagen ? `style="background-image:url('${optimizarImagen(cat.imagen, i === 0 ? 900 : 500)}');background-size:cover;background-position:center"` : ''}></div>
+      <div class="cat-info">
+        <p class="cat-name">${escapeHTML(cat.nombre)}</p>
+        <p class="cat-count">${cat.total_productos} prenda${cat.total_productos !== 1 ? 's' : ''}</p>
+      </div>
+    </div>
+  `).join('');
+
+  // Los tiles se agregaron después de que animations.js ya corrió su
+  // configuración inicial de GSAP — hay que decirle que reconozca estos
+  // elementos nuevos y recalcule posiciones de scroll.
+  if (window.aplicarParallaxCategorias) window.aplicarParallaxCategorias();
+}
+
+// Desde un tile del home: activa la categoría real (el mismo chip que ya
+// existe en la barra de filtros) y baja hasta el catálogo.
+function irACategoria(slug) {
+  const chip = document.querySelector(`[data-cat-slug="${slug}"]`) || document.querySelector('[data-cat="true"]');
+  if (chip) setFilterCat(chip, slug);
+  document.getElementById('productos').scrollIntoView({ behavior: 'smooth' });
 }
 
 function renderChipsCategoria() {

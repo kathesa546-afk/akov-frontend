@@ -37,8 +37,6 @@
     <div class="nav-logo">AKOV</div>
     <ul class="nav-links">
       <li><a href="#colecciones" onclick="closeMenu()">Colecciones</a></li>
-      <li><a href="#productos" onclick="closeMenu(); setFilterDirect('mujer')">Mujer</a></li>
-      <li><a href="#productos" onclick="closeMenu(); setFilterDirect('hombre')">Hombre</a></li>
       <li><a href="#descuentos" onclick="closeMenu()">Descuentos</a></li>
       <li><a href="#rastreo" onclick="closeMenu()">Rastreo</a></li>
     </ul>
@@ -75,8 +73,6 @@
     </div>
     <ul class="mobile-links">
       <li><a href="#colecciones" onclick="closeMenu()">Colecciones</a></li>
-      <li><a href="#productos" onclick="closeMenu(); setFilterDirect('mujer')">Mujer</a></li>
-      <li><a href="#productos" onclick="closeMenu(); setFilterDirect('hombre')">Hombre</a></li>
       <li><a href="#descuentos" onclick="closeMenu()">Descuentos</a></li>
       <li><a href="#rastreo" onclick="closeMenu()">Rastreo</a></li>
     </ul>
@@ -112,26 +108,7 @@
       <a href="#productos" class="section-link">Ver todo →</a>
     </div>
     <div class="cat-grid" id="catGrid">
-      <div class="cat-item cat-large" onclick="setFilterDirect('mujer')">
-        <div class="cat-bg"></div>
-        <div class="cat-info"><p class="cat-name">Mujer</p><p class="cat-count" id="cnt-mujer">— prendas</p></div>
-      </div>
-      <div class="cat-item" onclick="setFilterDirect('hombre')">
-        <div class="cat-bg"></div>
-        <div class="cat-info"><p class="cat-name">Hombre</p><p class="cat-count" id="cnt-hombre">— prendas</p></div>
-      </div>
-      <div class="cat-item" onclick="setFilterDirect('unisex')">
-        <div class="cat-bg"></div>
-        <div class="cat-info"><p class="cat-name">Unisex</p><p class="cat-count" id="cnt-unisex">— prendas</p></div>
-      </div>
-      <div class="cat-item" id="cat-extra-1" style="display:none" onclick="">
-        <div class="cat-bg"></div>
-        <div class="cat-info"><p class="cat-name" id="cat-extra-1-nombre"></p><p class="cat-count" id="cat-extra-1-count">— prendas</p></div>
-      </div>
-      <div class="cat-item" id="cat-extra-2" style="display:none" onclick="">
-        <div class="cat-bg"></div>
-        <div class="cat-info"><p class="cat-name" id="cat-extra-2-nombre"></p><p class="cat-count" id="cat-extra-2-count">— prendas</p></div>
-      </div>
+      <p style="grid-column:1/-1;padding:2rem;text-align:center;color:var(--gris-400);font-size:.8rem">Cargando categorías…</p>
     </div>
   </section>
 
@@ -144,9 +121,6 @@
       </div>
       <div class="filters" id="filterBar">
         <button class="filter-chip active" onclick="setFilter(this,'all')">Todo</button>
-        <button class="filter-chip" onclick="setFilter(this,'mujer')">Mujer</button>
-        <button class="filter-chip" onclick="setFilter(this,'hombre')">Hombre</button>
-        <button class="filter-chip" onclick="setFilter(this,'unisex')">Unisex</button>
         <span class="filter-sep">|</span>
         <button class="filter-chip" data-cat="true" onclick="setFilterCat(this,'')">Todos</button>
         <span class="filter-sep">|</span>
@@ -244,8 +218,8 @@
       <div>
         <p class="footer-col-title">Tienda</p>
         <ul class="footer-links">
-          <li><a href="#productos" onclick="setFilterDirect('mujer')">Mujer</a></li>
-          <li><a href="#productos" onclick="setFilterDirect('hombre')">Hombre</a></li>
+          <li><a href="#colecciones">Categorías</a></li>
+          <li><a href="#productos">Ver catálogo</a></li>
           <li><a href="#productos" onclick="setFilterDirect('oferta')">Descuentos</a></li>
           <li><a href="#productos">Novedades</a></li>
         </ul>

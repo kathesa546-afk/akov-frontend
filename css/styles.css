@@ -677,7 +677,7 @@ body {
   font-size: 4rem;
 }
 
-.product-card:hover .product-img-inner { transform: scale(1.04); }
+.product-card:hover .product-img-inner { transform: scale(1.16) !important; }
 
 .product-tag {
   position: absolute;

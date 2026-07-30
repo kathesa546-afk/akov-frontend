@@ -6,47 +6,68 @@
 
 gsap.registerPlugin(ScrollTrigger);
 
-// ─── HERO: la imagen entra "ampliada" y se asienta a su tamaño real ──────────
-// mientras el usuario baja por la primera pantalla. Efecto clásico de sitios
-// premium (poch.studio / notom.co) — la foto "respira" con el scroll en vez
-// de quedar estática.
-gsap.to('.hero-visual-inner', {
-  scale: 1,
-  ease: 'none',
-  scrollTrigger: {
-    trigger: '.hero',
-    start: 'top top',
-    end: 'bottom top',
-    scrub: true,
-  },
-});
-
-// ─── CATEGORÍAS: cada imagen se "revela" con el mismo efecto de zoom ─────────
-// según su propia posición en el viewport — no todas a la vez, cada tarjeta
-// tiene su propio disparador.
-document.querySelectorAll('.cat-item').forEach((item) => {
-  const bg = item.querySelector('.cat-bg');
-  if (!bg) return;
-
-  gsap.to(bg, {
+// ─── HERO ─────────────────────────────────────────────────────────────────
+// Dos capas de movimiento a la vez (esto es lo que hace que se sienta
+// "parallax" de verdad, no solo un zoom): la imagen de fondo se desplaza
+// verticalmente más lento que el resto de la página, MIENTRAS se des-zoomea
+// desde 1.45 hasta su tamaño real y aparece de un fundido. Todo controlado
+// directamente por la posición del scroll (scrub: true), no por tiempo.
+gsap.fromTo('.hero-visual-inner',
+  { scale: 1.45, opacity: 0.35, yPercent: -12 },
+  {
     scale: 1,
+    opacity: 1,
+    yPercent: 12,
     ease: 'none',
     scrollTrigger: {
-      trigger: item,
-      start: 'top bottom',
+      trigger: '.hero',
+      start: 'top top',
       end: 'bottom top',
-      scrub: true,
+      scrub: 0.6,
     },
-  });
-});
+  }
+);
 
-// ─── PRODUCTOS: reveal escalonado con IntersectionObserver ───────────────────
+// ─── CATEGORÍAS ──────────────────────────────────────────────────────────
+// Misma idea que el hero pero por tarjeta: cada imagen tiene su propio
+// disparador de scroll, así que el efecto ocurre en el momento exacto en que
+// esa tarjeta específica cruza la pantalla, no todas a la vez.
+function aplicarParallaxCategorias() {
+  document.querySelectorAll('.cat-item').forEach((item) => {
+    const bg = item.querySelector('.cat-bg');
+    if (!bg || bg.dataset.parallaxAplicado) return;
+    bg.dataset.parallaxAplicado = 'true';
+
+    gsap.fromTo(bg,
+      { scale: 1.4, yPercent: -10 },
+      {
+        scale: 1.05,
+        yPercent: 10,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: item,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 0.6,
+        },
+      }
+    );
+  });
+}
+aplicarParallaxCategorias();
+// main.js reemplaza el contenido del grid de categorías de forma
+// asíncrona (llega después desde la API) — se expone la función para que
+// pueda llamarla otra vez cuando eso pase, sin que animations.js tenga que
+// saber nada de cómo/cuándo se cargan los datos.
+window.aplicarParallaxCategorias = aplicarParallaxCategorias;
+
+// ─── PRODUCTOS: reveal escalonado + parallax sutil en la imagen ─────────────
 // El grid de productos se renderiza DESPUÉS de cargar (main.js llama a la API
-// de forma asíncrona), así que en vez de crear un ScrollTrigger de GSAP fijo
-// —que no sabría nada de tarjetas que todavía no existen— se usa un
+// de forma asíncrona), así que en vez de un ScrollTrigger fijo de GSAP —que
+// no sabría nada de tarjetas que todavía no existen— se usa un
 // IntersectionObserver que se reengancha automáticamente a cada tarjeta
-// nueva que aparece. Es además la técnica que recomienda evitar reflows
-// costosos por 'scroll' crudo en listas largas.
+// nueva. Además de aparecer con un fade-up, cada foto de producto se mueve
+// un poco más lento que la página (parallax sutil, no solo aparición).
 const observerProductos = new IntersectionObserver((entradas) => {
   entradas.forEach((entrada, i) => {
     if (entrada.isIntersecting) {
@@ -57,15 +78,42 @@ const observerProductos = new IntersectionObserver((entradas) => {
   });
 }, { threshold: 0.15 });
 
-// Vigila el grid de productos: cada vez que main.js inyecta tarjetas nuevas
-// (nueva búsqueda, nuevo filtro, carga inicial), las engancha al observer.
 const gridProductos = document.getElementById('productsGrid');
 if (gridProductos) {
   const vigilarTarjetasNuevas = new MutationObserver(() => {
-    gridProductos.querySelectorAll('.product-card:not(.observado)').forEach((tarjeta) => {
-      tarjeta.classList.add('observado');
-      observerProductos.observe(tarjeta);
+    // Limpia triggers de GSAP apuntando a tarjetas que ya no existen en el
+    // DOM (pasa cada vez que se cambia de filtro y el grid se reemplaza).
+    ScrollTrigger.getAll().forEach((st) => {
+      if (st.vars.__productoImg && !document.body.contains(st.trigger)) st.kill();
     });
+
+    gridProductos.querySelectorAll('.product-card').forEach((tarjeta) => {
+      if (!tarjeta.classList.contains('observado')) {
+        tarjeta.classList.add('observado');
+        observerProductos.observe(tarjeta);
+      }
+      const img = tarjeta.querySelector('.product-img-inner');
+      if (img && img.tagName === 'IMG' && !img.dataset.parallaxAplicado) {
+        img.dataset.parallaxAplicado = 'true';
+        gsap.fromTo(img,
+          { yPercent: -6, scale: 1.12 },
+          {
+            yPercent: 6,
+            scale: 1.12, // constante — solo da margen para el movimiento vertical
+            ease: 'none',
+            scrollTrigger: {
+              trigger: tarjeta,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: 0.6,
+              __productoImg: true,
+            },
+          }
+        );
+      }
+    });
+
+    ScrollTrigger.refresh();
   });
   vigilarTarjetasNuevas.observe(gridProductos, { childList: true });
 }
