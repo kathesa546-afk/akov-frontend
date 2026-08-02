@@ -963,16 +963,19 @@ async function iniciarPagoEpayco() {
     return;
   }
 
-  // ---------------------------------------------------------------
-  // EPAYCO
-  // test: true  → modo prueba, no cobra dinero real (para desarrollo)
-  // test: false → producción, cobra dinero real (para lanzamiento)
-  // Cambiar en Railway la variable EPAYCO_TEST=False cuando estés lista
-  // ---------------------------------------------------------------
+  // FIX (auditoría, hallazgo 2.1 — Alta): antes 'key' y 'test' estaban
+  // escritos como literales acá, sin ningún control centralizado. Ahora
+  // se leen de /api/config/, controlado por la variable de entorno
+  // EPAYCO_TEST_MODE en Railway — un solo lugar, sin volver a tocar código.
+  const epaycoConfig = await apiCall('/config/');
+  if (!epaycoConfig || !epaycoConfig.epayco_public_key) {
+    mostrarNotificacion('No se pudo iniciar el pago. Intenta de nuevo en unos segundos.');
+    return;
+  }
   try {
     const handler = ePayco.checkout.configure({
-      key: '90b036e7e0f51b21c0fd0160346e9c5c',
-      test: true  // ← Cambiar a false cuando la tienda esté lista para ventas reales
+      key: epaycoConfig.epayco_public_key,
+      test: epaycoConfig.epayco_test_mode
     });
 
     handler.open({

@@ -15,9 +15,8 @@
   --gris-400: #999490;
   --gris-600: #5a5652;
   --acento: #c9a96e;
-  --font-display: 'Outfit', sans-serif;
+  --font-display: 'Cormorant Garamond', serif;
   --font-body: 'Raleway', sans-serif;
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html { scroll-behavior: smooth; }
@@ -104,7 +103,7 @@ body {
   letter-spacing: 0.15em;
   text-transform: uppercase;
   font-family: var(--font-body);
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .btn-cookie-reject:hover {
@@ -127,7 +126,7 @@ body {
   background: rgba(250,250,250,0.95);
   backdrop-filter: blur(12px);
   border-bottom: 0.5px solid var(--gris-200);
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
 }
 
 .nav-logo {
@@ -163,14 +162,22 @@ body {
 }
 
 .icon-btn {
+  /* FIX (auditoría, hallazgo 3.1 — Media): antes esto medía ~30x30px
+     de área táctil real (18x18 svg + 6px de padding), por debajo del
+     mínimo de 48x48px recomendado para uso táctil. Se agranda el área
+     clicable con min-width/min-height sin cambiar el tamaño visual del
+     ícono (que sigue siendo 18x18 vía flex centrado). */
   background: none;
   border: none;
   cursor: pointer;
   padding: 6px;
-  position: relative;
-  color: var(--negro);
+  min-width: 48px;
+  min-height: 48px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  position: relative;
+  color: var(--negro);
   transition: opacity 0.2s;
 }
 
@@ -212,7 +219,7 @@ body {
   width: 22px;
   height: 1.5px;
   background: var(--negro);
-  transition: all 0.3s;
+  transition: opacity 0.3s, transform 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.3s, color 0.3s;
 }
 
 /* =====================
@@ -305,7 +312,7 @@ body {
   color: var(--negro);
   text-decoration: none;
   text-align: center;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .mobile-menu-btn:hover {
@@ -333,10 +340,8 @@ body {
   animation: fadeUp 0.9s ease both;
 }
 
-.hero-season {
-  font-family: var(--font-body);
+.hero-eyebrow {
   font-size: 0.68rem;
-  font-weight: 600;
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--gris-400);
@@ -345,16 +350,15 @@ body {
 
 .hero-title {
   font-family: var(--font-display);
-  font-size: 5.2rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.03em;
-  line-height: 0.92;
+  font-size: 5.5rem;
+  font-weight: 300;
+  line-height: 0.95;
   margin-bottom: 2rem;
 }
 
-.hero-title span {
-  color: var(--acento);
+.hero-title em {
+  font-style: italic;
+  color: var(--gris-600);
 }
 
 .hero-sub {
@@ -381,27 +385,27 @@ body {
   justify-content: center;
 }
 
-/* Contenedor del efecto de zoom-con-scroll (GSAP ScrollTrigger lo anima) */
-.hero-visual-inner {
-  position: absolute;
-  inset: 0;
-  transform: scale(1.18);
-  will-change: transform;
-}
-
 .hero-bg-text {
   font-family: var(--font-display);
-  font-size: 13rem;
-  font-weight: 900;
-  text-transform: uppercase;
+  font-size: 14rem;
+  font-weight: 300;
   color: rgba(10,10,10,0.06);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   user-select: none;
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  white-space: nowrap;
+}
+
+.hero-badge {
+  position: absolute;
+  top: 2rem; right: 2rem;
+  background: var(--negro);
+  color: var(--blanco);
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  line-height: 1.8;
 }
 
 /* =====================
@@ -420,12 +424,11 @@ body {
   border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.35s var(--ease), transform 0.15s var(--ease);
+  transition: opacity 0.25s ease, transform 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
   font-family: var(--font-body);
 }
 
 .btn-primary:hover { background: var(--gris-600); }
-.btn-primary:active { transform: scale(0.97); }
 .btn-full { width: 100%; justify-content: center; }
 
 .btn-outline {
@@ -441,15 +444,13 @@ body {
   border: 1.5px solid var(--negro);
   cursor: pointer;
   text-decoration: none;
-  transition: background 0.35s var(--ease), color 0.35s var(--ease), transform 0.15s var(--ease);
+  transition: opacity 0.25s ease, transform 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
 }
 
 .btn-outline:hover {
   background: var(--negro);
   color: var(--blanco);
 }
-
-.btn-outline:active { transform: scale(0.97); }
 
 .btn-accent {
   display: inline-flex;
@@ -471,6 +472,34 @@ body {
 .btn-accent:hover { opacity: 0.85; }
 
 /* =====================
+   MARQUEE
+===================== */
+.marquee-wrap {
+  background: var(--negro);
+  color: var(--blanco);
+  padding: 0.65rem 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.marquee-track {
+  display: inline-flex;
+  animation: marquee 22s linear infinite;
+}
+
+.marquee-track span {
+  font-size: 0.62rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  padding: 0 3rem;
+}
+
+.marquee-track b {
+  color: var(--acento);
+  font-weight: 400;
+}
+
+/* =====================
    SECCIONES
 ===================== */
 .section { padding: 5rem 4rem; }
@@ -484,14 +513,12 @@ body {
 
 .section-title {
   font-family: var(--font-display);
-  font-size: 2.75rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 0.95;
+  font-size: 3rem;
+  font-weight: 300;
+  line-height: 1;
 }
 
-.section-title span { color: var(--acento); }
+.section-title em { font-style: italic; }
 
 .section-link {
   font-size: 0.65rem;
@@ -501,7 +528,7 @@ body {
   text-decoration: none;
   border-bottom: 1px solid var(--gris-200);
   padding-bottom: 2px;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .section-link:hover {
@@ -537,20 +564,17 @@ body {
   position: absolute;
   inset: 0;
   background: linear-gradient(165deg, #e2dfd8 0%, #b8b4ad 100%);
-  transform: scale(1.2);
-  will-change: transform;
+  transition: transform 0.5s ease;
 }
 
-.cat-item:hover .cat-bg { transform: scale(1.25) !important; }
+.cat-item:hover .cat-bg { transform: scale(1.03); }
 
 .cat-info { position: relative; z-index: 1; }
 
 .cat-name {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-size: 1.6rem;
+  font-weight: 300;
   line-height: 1;
   margin-bottom: 0.3rem;
 }
@@ -579,10 +603,8 @@ body {
 
 .filter-title {
   font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
+  font-size: 1.5rem;
+  font-weight: 300;
 }
 
 .filter-count {
@@ -606,7 +628,7 @@ body {
   border: 0.5px solid var(--gris-200);
   background: none;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
   color: var(--gris-600);
   font-family: var(--font-body);
 }
@@ -646,17 +668,7 @@ body {
   gap: 1.5rem;
 }
 
-.product-card {
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
-}
-
-.product-card.revelado {
-  opacity: 1;
-  transform: translateY(0);
-}
+.product-card { cursor: pointer; }
 
 .product-img {
   aspect-ratio: 3/4;
@@ -677,7 +689,7 @@ body {
   font-size: 4rem;
 }
 
-.product-card:hover .product-img-inner { transform: scale(1.16) !important; }
+.product-card:hover .product-img-inner { transform: scale(1.04); }
 
 .product-tag {
   position: absolute;
@@ -773,15 +785,14 @@ body {
 
 .deal-title {
   font-family: var(--font-display);
-  font-size: 3.2rem;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 0.92;
+  font-size: 3.5rem;
+  font-weight: 300;
+  line-height: 0.95;
   margin-bottom: 1rem;
 }
 
-.deal-title span {
+.deal-title em {
+  font-style: italic;
   color: var(--acento);
 }
 
@@ -824,8 +835,8 @@ body {
 
 .deal-card-price {
   font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 800;
+  font-size: 1.2rem;
+  font-weight: 300;
 }
 
 .deal-card-orig {
@@ -901,30 +912,44 @@ body {
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
-  font-size: 13rem;
-  font-weight: 900;
-  text-transform: uppercase;
+  font-size: 14rem;
+  font-weight: 300;
   color: rgba(10,10,10,0.04);
   white-space: nowrap;
   user-select: none;
   pointer-events: none;
 }
 
-.sub-title {
-  font-family: var(--font-display);
-  font-size: 2.75rem;
-  font-weight: 900;
+.sub-eyebrow {
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  letter-spacing: -0.02em;
-  line-height: 1.05;
-  margin-bottom: 1.5rem;
+  color: var(--gris-400);
+  margin-bottom: 1rem;
   position: relative;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
 }
 
-.sub-title span { color: var(--acento); }
+.sub-title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 300;
+  line-height: 1;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.sub-disc {
+  display: inline-block;
+  background: var(--negro);
+  color: var(--blanco);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-style: italic;
+  font-weight: 300;
+  padding: 0.25rem 1.25rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
 
 .sub-sub {
   font-size: 0.8rem;
@@ -1019,7 +1044,7 @@ body {
   color: var(--negro);
   border: 0.5px solid var(--gris-200);
   padding: 0.5rem 1.25rem;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .track-link:hover {
@@ -1075,7 +1100,7 @@ footer {
   font-size: 0.6rem;
   color: rgba(255,255,255,0.5);
   text-decoration: none;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .social-btn:hover {
@@ -1130,7 +1155,7 @@ footer {
   font-size: 0.65rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .wa-btn:hover {
@@ -1288,7 +1313,7 @@ footer {
   color: var(--gris-400);
   font-family: var(--font-body);
   border-bottom: 2px solid transparent;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .login-tab.active {
@@ -1515,7 +1540,7 @@ footer {
   font-size: 0.72rem;
   font-family: var(--font-body);
   letter-spacing: 0.05em;
-  transition: all 0.2s;
+  transition: opacity 0.2s, transform 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .talla-btn:hover,
@@ -1644,7 +1669,7 @@ footer {
   text-transform: uppercase;
   opacity: 0;
   transform: translateY(-8px);
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease;
   pointer-events: none;
   max-width: 320px;
 }
@@ -1660,6 +1685,11 @@ footer {
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 /* =====================
@@ -1930,7 +1960,7 @@ footer {
   cursor: pointer;
   font-family: var(--font-body);
   white-space: nowrap;
-  transition: all .2s;
+  transition: opacity .2s, transform .2s, background-color .2s, border-color .2s, box-shadow .2s, color .2s;
 }
 
 .cupon-btn:hover { background: var(--negro); color: var(--blanco); }
@@ -2030,7 +2060,7 @@ footer {
   color: var(--negro);
   cursor: pointer;
   font-family: var(--font-body);
-  transition: all .25s;
+  transition: opacity .25s, transform .25s, background-color .25s, border-color .25s, box-shadow .25s, color .25s;
 }
 
 .btn-load-more:hover { background: var(--negro); color: var(--blanco); }
