@@ -132,6 +132,8 @@ let modoRespaldo = false; // true cuando la API no responde y usamos PRODUCTOS_D
 let carrito = JSON.parse(localStorage.getItem('akov_carrito') || '[]');
 let favoritos = [];
 let usuarioActual = null;
+let envioActual = 0;
+let cuponAplicado = null; // { codigo, descuento_calculado } o null si no hay cupón válido
 let tallaSeleccionada = null;
 let productoDetalleActual = null; // producto completo cargado por abrirProducto()
 let searchTimer = null;
@@ -895,6 +897,7 @@ async function iniciarPagoEpayco() {
   const telefono = document.getElementById('chkTelefono').value.trim();
   const ciudad = document.getElementById('chkCiudad').value.trim();
   const direccion = document.getElementById('chkDireccion').value.trim();
+  const apto = document.getElementById('chkApto')?.value.trim() || '';
   const emailInput = document.getElementById('chkEmail');
   const email = usuarioActual
     ? usuarioActual.email
@@ -914,18 +917,29 @@ async function iniciarPagoEpayco() {
     return;
   }
 
-  const total = carrito.reduce((s, i) => s + i.precio * (i.cantidad || 1), 0);
+  const subtotal = carrito.reduce((s, i) => s + i.precio * (i.cantidad || 1), 0);
+  const descuento = cuponAplicado ? cuponAplicado.descuento_calculado : 0;
+  const total = Math.max(0, subtotal - descuento + envioActual);
   const descripcion = carrito.map(i => `${i.nombre} (x${i.cantidad || 1})`).join(', ');
-  const pago = document.querySelector('input[name="pago"]:checked')?.value || 'tarjeta';
-  const apto = document.getElementById('chkApto')?.value || '';
+  // Fix hallazgo 1.4: el fallback anterior era 'tarjeta', que no es un
+  // valor válido de metodo_pago (solo existen 'epayco'/'efectivo'). Nunca
+  // se disparaba en la práctica porque el radio siempre tiene 'checked',
+  // pero se corrige igual para no dejar una trampa ahí.
+  const pago = document.querySelector('input[name="pago"]:checked')?.value || 'epayco';
 
+  // Fix hallazgo 1.2: estos son los nombres de campo REALES que lee
+  // crear_pedido() en el backend (nombre, email, telefono, direccion,
+  // ciudad, departamento, notas, cupon_codigo) — los anteriores
+  // (nombre_cliente, email_cliente, etc.) no existían del lado del
+  // backend, así que la petición SIEMPRE fallaba con 400 antes de este
+  // fix, para cualquier persona que intentara pagar.
   const pedidoRes = await apiCall('/pedidos/', 'POST', {
-    nombre_cliente: nombre,
-    email_cliente: email,
-    telefono_cliente: telefono,
-    ciudad, direccion,
-    barrio_apto: apto,
+    nombre, email, telefono, direccion, ciudad,
+    departamento: '', // Colombia: departamento distinto de ciudad — el
+                       // formulario actual no pide este dato todavía
+    notas: apto ? `Apto/Torre: ${apto}` : '',
     metodo_pago: pago,
+    cupon_codigo: cuponAplicado ? cuponAplicado.codigo : '',
     items: carrito.map(i => ({
       producto_id: i.id,
       talla: i.talla || 'M',
@@ -1009,6 +1023,12 @@ function toggleCheckout() {
   const open = o.classList.contains('open');
   cerrarTodosLosPaneles();
   if (!open) {
+    envioActual = 0;
+    cuponAplicado = null;
+    const cuponFeedback = document.getElementById('cuponFeedback');
+    if (cuponFeedback) cuponFeedback.textContent = '';
+    const chkEnvio = document.getElementById('chkEnvio');
+    if (chkEnvio) chkEnvio.textContent = 'Ingresa tu ciudad';
     actualizarCheckout();
     if (usuarioActual) {
       const chkNombre = document.getElementById('chkNombre');
@@ -1039,9 +1059,79 @@ function actualizarCheckout() {
     </div>
   `).join('');
 
-  const total = carrito.reduce((s, i) => s + i.precio * (i.cantidad || 1), 0);
-  sub.textContent = '$' + formatPrecio(total);
+  const subtotal = carrito.reduce((s, i) => s + i.precio * (i.cantidad || 1), 0);
+  const descuento = cuponAplicado ? cuponAplicado.descuento_calculado : 0;
+  const total = Math.max(0, subtotal - descuento + envioActual);
+
+  sub.textContent = '$' + formatPrecio(subtotal);
   tot.textContent = '$' + formatPrecio(total);
+}
+
+// Recalcula el costo de envío cuando el cliente escribe su ciudad —
+// endpoint real: GET /checkout/envio/?ciudad=X&subtotal=Y (nunca se
+// conectó antes; el campo se quedaba fijo en "Ingresa tu ciudad").
+async function actualizarEnvio() {
+  const ciudad = document.getElementById('chkCiudad').value.trim();
+  const chkEnvio = document.getElementById('chkEnvio');
+  if (!ciudad) {
+    chkEnvio.textContent = 'Ingresa tu ciudad';
+    envioActual = 0;
+    actualizarCheckout();
+    return;
+  }
+
+  const subtotal = carrito.reduce((s, i) => s + i.precio * (i.cantidad || 1), 0);
+  chkEnvio.textContent = 'Calculando…';
+
+  const res = await apiCall(`/checkout/envio/?ciudad=${encodeURIComponent(ciudad)}&subtotal=${subtotal}`);
+  if (!res) {
+    chkEnvio.textContent = 'No se pudo calcular el envío';
+    envioActual = 0;
+    actualizarCheckout();
+    return;
+  }
+
+  envioActual = res.costo_envio || 0;
+  if (res.envio_gratis) {
+    chkEnvio.textContent = 'Gratis';
+  } else {
+    chkEnvio.textContent = '$' + formatPrecio(envioActual);
+    if (res.falta_para_envio_gratis > 0) {
+      chkEnvio.title = `Te faltan $${formatPrecio(res.falta_para_envio_gratis)} para envío gratis`;
+    }
+  }
+  actualizarCheckout();
+}
+
+// Valida el cupón contra el backend y aplica el descuento al total —
+// endpoint real: POST /checkout/cupon/ { codigo, subtotal } (nunca se
+// conectó antes; el input de cupón no hacía nada al escribir en él).
+async function aplicarCupon() {
+  const input = document.getElementById('cuponInput');
+  const feedback = document.getElementById('cuponFeedback');
+  const codigo = input.value.trim().toUpperCase();
+
+  if (!codigo) {
+    feedback.textContent = 'Ingresa un código de cupón';
+    feedback.style.color = '#c0392b';
+    return;
+  }
+
+  const subtotal = carrito.reduce((s, i) => s + i.precio * (i.cantidad || 1), 0);
+  const res = await apiCall('/checkout/cupon/', 'POST', { codigo, subtotal });
+
+  if (!res || res.error) {
+    cuponAplicado = null;
+    feedback.textContent = res?.error || 'No se pudo validar el cupón';
+    feedback.style.color = '#c0392b';
+    actualizarCheckout();
+    return;
+  }
+
+  cuponAplicado = { codigo: res.codigo, descuento_calculado: res.descuento_calculado };
+  feedback.textContent = `Cupón aplicado: -$${formatPrecio(res.descuento_calculado)}`;
+  feedback.style.color = '#2e7d32';
+  actualizarCheckout();
 }
 
 // =====================
