@@ -1235,6 +1235,18 @@ footer {
   border-bottom: 0.5px solid var(--gris-200);
 }
 
+/* FIX (auditoría, hallazgo 3.4 — Media): antes el color de hover del
+   botón "eliminar" del carrito se manejaba con onmouseover/onmouseout
+   inline en JS (this.style.color = ...). Un simple :hover en CSS hace
+   exactamente lo mismo, sin JS ni atributos de evento inline. */
+.cart-item-remove {
+  color: #999490;
+  transition: color 0.15s;
+}
+.cart-item-remove:hover {
+  color: #0a0a0a;
+}
+
 .cart-item-img {
   width: 64px; height: 80px;
   background: var(--gris-100);

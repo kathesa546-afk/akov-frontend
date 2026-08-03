@@ -219,7 +219,7 @@ function renderCategoriasHome() {
   const categorias = categoriasDisponibles.slice(0, 5);
 
   grid.innerHTML = categorias.map((cat, i) => `
-    <div class="cat-item ${i === 0 ? 'cat-large' : ''}" onclick="irACategoria('${cat.slug}')">
+    <div class="cat-item ${i === 0 ? 'cat-large' : ''}" data-action="ir-categoria" data-slug="${escapeHTML(cat.slug)}">
       <div class="cat-bg" ${cat.imagen ? `style="background-image:url('${optimizarImagen(cat.imagen, i === 0 ? 900 : 500)}');background-size:cover;background-position:center"` : ''}></div>
       <div class="cat-info">
         <p class="cat-name">${escapeHTML(cat.nombre)}</p>
@@ -489,11 +489,117 @@ function toggleLogin() {
   }
 }
 
-function switchTab(tab) {
+// FIX (auditoría, hallazgo 3.4 — Media): antes usaba `event.currentTarget`
+// (el objeto `event` global implícito que solo existe de forma confiable
+// dentro de un onclick="" inline clásico). Al migrar a addEventListener
+// delegado, ese global ya no está garantizado — ahora el botón que
+// disparó el cambio de tab se recibe explícitamente como segundo
+// parámetro `btn` (puede venir vacío cuando switchTab se llama de forma
+// programática, ej. desde mostrarRecuperarPassword(), sin que el usuario
+// haya hecho click en un botón .login-tab real).
+function switchTab(tab, btn) {
   document.querySelectorAll('.login-tab').forEach(t => t.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  const tabsBar = document.getElementById('loginTabs');
+  const titulo = document.getElementById('loginPanelTitle');
+  const tabResetConfirmar = document.getElementById('tabResetConfirmar');
+
+  if (tab === 'reset') {
+    // "Olvidé mi contraseña" no es una pestaña más del tab bar (no hay
+    // botón .login-tab para ella) — se entra por el link de texto bajo
+    // el formulario de login, así que se oculta el propio tab bar.
+    if (tabsBar) tabsBar.style.display = 'none';
+    if (titulo) titulo.textContent = 'Restablecer contraseña';
+    document.getElementById('tabLogin').style.display = 'none';
+    document.getElementById('tabRegister').style.display = 'none';
+    document.getElementById('tabReset').style.display = 'block';
+    if (tabResetConfirmar) tabResetConfirmar.style.display = 'none';
+    return;
+  }
+
+  if (tabsBar) tabsBar.style.display = '';
+  if (titulo) titulo.textContent = 'Mi cuenta';
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    const fallback = document.getElementById(tab === 'register' ? 'tabBtnRegister' : 'tabBtnLogin');
+    if (fallback) fallback.classList.add('active');
+  }
   document.getElementById('tabLogin').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('tabRegister').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('tabReset').style.display = 'none';
+  if (tabResetConfirmar) tabResetConfirmar.style.display = 'none';
+}
+
+// =====================
+// RECUPERACIÓN DE CONTRASEÑA
+// FIX (auditoría, hallazgo 3.4 — descubierto de paso): estas tres
+// funciones se llamaban desde index.html (mostrarRecuperarPassword,
+// solicitarReset) pero NUNCA existieron en este archivo — el flujo
+// completo de "olvidé mi contraseña" tiraba ReferenceError y no hacía
+// nada. El backend ya soportaba esto (/auth/password-reset/ y
+// /auth/password-reset/confirmar/); solo faltaba conectar el frontend,
+// incluyendo la pantalla para poner la contraseña nueva al volver desde
+// el enlace del correo (?reset_token=... en la URL), que tampoco existía.
+// =====================
+
+// Token leído de la URL (?reset_token=...) cuando el usuario vuelve del
+// enlace que le llegó por correo. null si no hay ningún reset en curso.
+let resetTokenActual = null;
+
+function mostrarRecuperarPassword() {
+  switchTab('reset');
+}
+
+async function solicitarReset() {
+  const email = document.getElementById('resetEmail').value.trim();
+  if (!email) { mostrarNotificacion('Ingresa tu correo electrónico'); return; }
+  const res = await apiCall('/auth/password-reset/', 'POST', { email });
+  if (!res) { mostrarNotificacion('Error de conexión'); return; }
+  mostrarNotificacion(res.mensaje || res.error || 'Si el email existe, recibirás un enlace en los próximos minutos.');
+  document.getElementById('resetEmail').value = '';
+}
+
+async function confirmarNuevaPassword() {
+  const pass = document.getElementById('resetNuevaPass').value;
+  if (!resetTokenActual) {
+    mostrarNotificacion('El enlace no es válido o ya expiró. Solicita uno nuevo.');
+    return;
+  }
+  if (pass.length < 8) { mostrarNotificacion('Mínimo 8 caracteres'); return; }
+  const res = await apiCall('/auth/password-reset/confirmar/', 'POST', { token: resetTokenActual, password: pass });
+  if (!res) { mostrarNotificacion('Error de conexión'); return; }
+  if (res.error) { mostrarNotificacion(res.error); return; }
+  mostrarNotificacion(res.mensaje || 'Contraseña actualizada correctamente.');
+  resetTokenActual = null;
+  document.getElementById('resetNuevaPass').value = '';
+  switchTab('login');
+}
+
+// Se llama una vez al cargar la página (ver sección INICIAR). Si el
+// usuario llegó desde el enlace del correo de recuperación, abre
+// directamente la pantalla de "poner contraseña nueva" con el token ya
+// cargado, y limpia el token de la URL visible (no debe quedar ahí tras
+// usarse, ni sobrevivir a un refresh accidental de la página).
+function detectarTokenDeReset() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('reset_token');
+  if (!token) return;
+
+  resetTokenActual = token;
+  const url = new URL(window.location.href);
+  url.searchParams.delete('reset_token');
+  window.history.replaceState({}, '', url);
+
+  toggleLogin();
+  const tabsBar = document.getElementById('loginTabs');
+  if (tabsBar) tabsBar.style.display = 'none';
+  const titulo = document.getElementById('loginPanelTitle');
+  if (titulo) titulo.textContent = 'Restablecer contraseña';
+  document.getElementById('tabLogin').style.display = 'none';
+  document.getElementById('tabRegister').style.display = 'none';
+  document.getElementById('tabReset').style.display = 'none';
+  const tabResetConfirmar = document.getElementById('tabResetConfirmar');
+  if (tabResetConfirmar) tabResetConfirmar.style.display = 'block';
 }
 
 // =====================
@@ -502,7 +608,11 @@ function switchTab(tab) {
 function renderImagen(p, clase = 'product-img-inner') {
   const nombreSeguro = escapeHTML(p.nombre);
   if (p.foto) {
-    return `<img src="${optimizarImagen(p.foto, 600)}" alt="${nombreSeguro}" class="${clase}" loading="lazy" decoding="async" onerror="this.outerHTML='<span class=\\"${clase}\\">${p.icono || '👗'}</span>'">`;
+    // FIX (auditoría, hallazgo 3.4): antes era onerror="" inline. Los
+    // eventos 'error' de <img> NO burbujean, así que la delegación por
+    // click normal no los captura — se usa un listener global aparte en
+    // fase de captura (ver más abajo, "MANEJO GLOBAL DE ERRORES DE IMAGEN").
+    return `<img src="${optimizarImagen(p.foto, 600)}" alt="${nombreSeguro}" class="${clase}" loading="lazy" decoding="async" data-fallback-icon="${escapeHTML(p.icono || '👗')}">`;
   }
   return `<span class="${clase}">${p.icono || '👗'}</span>`;
 }
@@ -519,12 +629,12 @@ function renderProductos(lista) {
 
   grid.innerHTML = lista.map(p => `
     <div class="product-card">
-      <div class="product-img" onclick="abrirProducto('${p.slug || ''}', ${p.id})">
+      <div class="product-img" data-action="abrir-producto" data-slug="${escapeHTML(p.slug || '')}" data-id="${p.id}">
         ${renderImagen(p)}
         ${p.tag ? `<span class="product-tag ${p.tag === 'sale' ? 'sale' : ''}">${p.tag === 'sale' ? 'Oferta' : 'Nuevo'}</span>` : ''}
         <div class="product-actions">
-          <button class="pa-add" onclick="event.stopPropagation(); abrirProducto('${p.slug || ''}', ${p.id})">Ver producto</button>
-          <button class="pa-fav" onclick="event.stopPropagation(); toggleFav(${p.id})"
+          <button class="pa-add" data-action="abrir-producto" data-slug="${escapeHTML(p.slug || '')}" data-id="${p.id}">Ver producto</button>
+          <button class="pa-fav" data-action="toggle-fav" data-id="${p.id}"
             style="color:${favoritos.find(f => f.id === p.id) ? '#c0392b' : 'inherit'}">
             ${favoritos.find(f => f.id === p.id) ? '♥' : '♡'}
           </button>
@@ -603,14 +713,14 @@ async function abrirProducto(slug, idRespaldo) {
     const content = f.imagen_url
       ? `<img src="${optimizarImagen(f.imagen_url, 150)}" alt="${nombreSeguro} foto ${i + 1}" style="width:100%;height:100%;object-fit:cover" loading="lazy" decoding="async">`
       : `<span style="font-size:1.8rem">${p.icono || '👗'}</span>`;
-    return `<div class="miniatura ${i === 0 ? 'active' : ''}" onclick="cambiarFoto(this, '${f.imagen_url || ''}', '${p.icono || '👗'}')">${content}</div>`;
+    return `<div class="miniatura ${i === 0 ? 'active' : ''}" data-action="cambiar-foto" data-imgurl="${escapeHTML(f.imagen_url || '')}" data-icono="${escapeHTML(p.icono || '👗')}">${content}</div>`;
   }).join('');
 
   const tallasArr = p.tallas || [];
   const tallasHTML = tallasArr.length
     ? tallasArr.map(t => `
         <button class="talla-btn ${!t.disponible ? 'agotada' : ''}"
-          ${!t.disponible ? 'disabled' : `onclick="seleccionarTalla(this,'${t.nombre}')"`}
+          ${!t.disponible ? 'disabled' : `data-action="seleccionar-talla" data-talla="${escapeHTML(t.nombre)}"`}
         >${escapeHTML(t.nombre)}</button>
       `).join('')
     : '<p style="font-size:.72rem;color:#999490">Sin tallas disponibles por ahora</p>';
@@ -634,9 +744,9 @@ async function abrirProducto(slug, idRespaldo) {
         <p class="tallas-label">Selecciona tu talla</p>
         <div class="tallas-grid">${tallasHTML}</div>
         <div class="producto-btns">
-          <button class="btn-primary" style="flex:1" onclick="agregarDesdeDetalle(${p.id})">Agregar al carrito</button>
+          <button class="btn-primary" style="flex:1" data-action="agregar-detalle" data-id="${p.id}">Agregar al carrito</button>
           <button class="btn-outline" id="btnFavDetalle${p.id}"
-            onclick="toggleFav(${p.id}); actualizarBtnFav(${p.id})">
+            data-action="fav-modal" data-id="${p.id}">
             ${favoritos.find(f => f.id === p.id) ? '♥ Guardado' : '♡ Favorito'}
           </button>
         </div>
@@ -747,16 +857,14 @@ function actualizarCarrito() {
         <p class="cart-item-name">${escapeHTML(item.nombre)}</p>
         <p class="cart-item-meta">Talla ${escapeHTML(item.talla || 'M')}</p>
         <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem">
-          <button onclick="cambiarCantidad(${i},-1)" style="background:var(--gris-100);border:none;width:40px;height:40px;cursor:pointer;font-size:1rem;border-radius:2px">−</button>
+          <button data-action="cambiar-cantidad" data-index="${i}" data-delta="-1" style="background:var(--gris-100);border:none;width:40px;height:40px;cursor:pointer;font-size:1rem;border-radius:2px">−</button>
           <span style="font-size:.72rem;min-width:16px;text-align:center">${item.cantidad || 1}</span>
-          <button onclick="cambiarCantidad(${i},1)" style="background:var(--gris-100);border:none;width:40px;height:40px;cursor:pointer;font-size:1rem;border-radius:2px">+</button>
+          <button data-action="cambiar-cantidad" data-index="${i}" data-delta="1" style="background:var(--gris-100);border:none;width:40px;height:40px;cursor:pointer;font-size:1rem;border-radius:2px">+</button>
         </div>
         <p class="cart-item-price">$${formatPrecio(item.precio * (item.cantidad || 1))}</p>
       </div>
-      <button onclick="removeFromCart(${i})"
-        style="background:none;border:none;cursor:pointer;color:#999490;font-size:.8rem;padding:0;align-self:flex-start"
-        onmouseover="this.style.color='#0a0a0a'"
-        onmouseout="this.style.color='#999490'">✕</button>
+      <button data-action="remove-cart" data-index="${i}" class="cart-item-remove"
+        style="background:none;border:none;cursor:pointer;font-size:.8rem;padding:0;align-self:flex-start">✕</button>
     </div>
   `).join('');
 
@@ -823,10 +931,10 @@ function actualizarFavoritos() {
       </div>
       <div style="display:flex;flex-direction:column;gap:.5rem">
         <button class="btn-primary" style="padding:.4rem .75rem;font-size:.58rem"
-          onclick="abrirProducto('${p.slug || ''}', ${p.id}); toggleFavoritos()">
+          data-action="ver-producto-fav" data-slug="${escapeHTML(p.slug || '')}" data-id="${p.id}">
           Ver producto
         </button>
-        <button onclick="toggleFav(${p.id})"
+        <button data-action="toggle-fav" data-id="${p.id}"
           style="background:none;border:none;cursor:pointer;color:#999490;font-size:.75rem">
           Eliminar
         </button>
@@ -1321,6 +1429,115 @@ function limpiarDescripcion(html) {
 }
 
 // =====================
+// DELEGACIÓN DE EVENTOS (auditoría, hallazgo 3.4 — Media)
+// FIX: antes casi toda la interactividad del sitio estaba declarada con
+// onclick="" / oninput="" / onchange="" inline en el HTML, o inyectada en
+// los mismos términos dentro de template strings de este archivo. Eso
+// acopla fuertemente la vista a la lógica, dificulta testear/mantener, y
+// bloqueaba adoptar una Content-Security-Policy estricta sin
+// 'unsafe-inline' en script-src (hallazgo 2.2).
+//
+// Ahora hay UN SOLO listener de click en document, que delega según el
+// atributo data-action del elemento más cercano al click real
+// (event.target.closest('[data-action]')). Args adicionales viajan en
+// data-* (data-id, data-slug, data-index, etc.) en vez de quedar
+// interpolados directo en el HTML. Como closest() encuentra siempre el
+// data-action MÁS CERCANO al punto de click, un botón anidado dentro de
+// otro elemento con su propio data-action ya no necesita
+// event.stopPropagation() manual — antes sí hacía falta, porque cada
+// onclick="" inline era un listener independiente y la burbuja del DOM
+// disparaba ambos.
+// =====================
+
+const ACCIONES_CLICK = {
+  'mostrar-privacidad': () => mostrarPrivacidad(),
+  'cerrar-privacidad': () => cerrarPrivacidad(),
+  'rechazar-cookies': () => rejectCookies(),
+  'aceptar-cookies': () => acceptCookies(),
+  'toggle-menu': () => toggleMenu(),
+  'close-menu': () => closeMenu(),
+  'cerrar-menu-login': () => { closeMenu(); toggleLogin(); },
+  'cerrar-menu-favoritos': () => { closeMenu(); toggleFavoritos(); },
+  'toggle-login': () => toggleLogin(),
+  'toggle-pedidos': () => togglePedidos(),
+  'cerrar-sesion': () => cerrarSesion(),
+  'toggle-favoritos': () => toggleFavoritos(),
+  'toggle-cart': () => toggleCart(),
+  'toggle-cart-checkout': () => { toggleCart(); toggleCheckout(); },
+  'toggle-checkout': () => toggleCheckout(),
+  'cerrar-producto': () => cerrarProducto(),
+  'set-filter': (el) => setFilter(el, el.dataset.arg),
+  'set-filter-cat': (el) => setFilterCat(el, el.dataset.arg || ''),
+  'set-filter-directo': (el) => setFilterDirect(el.dataset.arg),
+  'cargar-mas': () => cargarMasProductos(),
+  'switch-tab': (el) => switchTab(el.dataset.arg, el),
+  'volver-login': () => switchTab('login'),
+  'login-user': () => loginUser(),
+  'mostrar-recuperar-password': () => mostrarRecuperarPassword(),
+  'register-user': () => registerUser(),
+  'solicitar-reset': () => solicitarReset(),
+  'confirmar-reset': () => confirmarNuevaPassword(),
+  'aplicar-cupon': () => aplicarCupon(),
+  'iniciar-pago': () => iniciarPagoEpayco(),
+  'suscribirse': () => subscribe(),
+  'rastrear': () => trackOrder(),
+  'ir-categoria': (el) => irACategoria(el.dataset.slug),
+  'abrir-producto': (el) => abrirProducto(el.dataset.slug || '', Number(el.dataset.id)),
+  'toggle-fav': (el) => toggleFav(Number(el.dataset.id)),
+  'cambiar-foto': (el) => cambiarFoto(el, el.dataset.imgurl || '', el.dataset.icono || '👗'),
+  'seleccionar-talla': (el) => seleccionarTalla(el, el.dataset.talla),
+  'agregar-detalle': (el) => agregarDesdeDetalle(Number(el.dataset.id)),
+  'fav-modal': (el) => { const id = Number(el.dataset.id); toggleFav(id); actualizarBtnFav(id); },
+  'cambiar-cantidad': (el) => cambiarCantidad(Number(el.dataset.index), Number(el.dataset.delta)),
+  'remove-cart': (el) => removeFromCart(Number(el.dataset.index)),
+  'ver-producto-fav': (el) => { abrirProducto(el.dataset.slug || '', Number(el.dataset.id)); toggleFavoritos(); },
+};
+
+document.addEventListener('click', function(e) {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const accion = ACCIONES_CLICK[el.dataset.action];
+  if (!accion) { console.error('data-action desconocido:', el.dataset.action); return; }
+  accion(el, e);
+});
+
+// MANEJO GLOBAL DE ERRORES DE IMAGEN — los eventos 'error' de <img> no
+// burbujean, así que necesitan su propio listener en fase de captura
+// (tercer argumento `true`) en vez de sumarse al delegado de click.
+document.addEventListener('error', function(e) {
+  const img = e.target;
+  if (img.tagName === 'IMG' && img.hasAttribute('data-fallback-icon')) {
+    const clase = img.className;
+    const icono = img.getAttribute('data-fallback-icon');
+    img.outerHTML = `<span class="${clase}">${icono}</span>`;
+  }
+}, true);
+
+// Inputs/selects estáticos (siempre presentes en el DOM desde la carga
+// de la página, nunca se recrean vía innerHTML) — se bindean una sola
+// vez por ID en vez de usar delegación, que sería una complejidad
+// innecesaria para elementos que ya existen desde el inicio.
+function bindearInputsEstaticos() {
+  document.getElementById('searchInput')?.addEventListener('input', function() {
+    onSearch(this.value);
+  });
+  document.querySelector('.sort-select')?.addEventListener('change', function() {
+    sortProducts(this.value);
+  });
+  document.getElementById('chkCiudad')?.addEventListener('input', actualizarEnvio);
+  document.getElementById('cuponInput')?.addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+  });
+  document.getElementById('loginEmail')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') loginUser();
+  });
+  document.getElementById('loginPass')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') loginUser();
+  });
+}
+
+
+// =====================
 // INICIAR
 // =====================
 actualizarCarrito();
@@ -1328,6 +1545,8 @@ checkCookies();
 verificarSesion();
 cargarCategoriasAPI();
 cargarProductosAPI();
+bindearInputsEstaticos();
+detectarTokenDeReset();
 
 // PWA: registrar el service worker (si el navegador lo soporta — no todos,
 // así que se comprueba antes en vez de asumir).
