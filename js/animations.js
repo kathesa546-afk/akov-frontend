@@ -12,21 +12,38 @@ gsap.registerPlugin(ScrollTrigger);
 // verticalmente más lento que el resto de la página, MIENTRAS se des-zoomea
 // desde 1.45 hasta su tamaño real y aparece de un fundido. Todo controlado
 // directamente por la posición del scroll (scrub: true), no por tiempo.
-gsap.fromTo('.hero-visual-inner',
-  { scale: 1.45, opacity: 0.35, yPercent: -12 },
-  {
-    scale: 1,
-    opacity: 1,
-    yPercent: 12,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: '.hero',
-      start: 'top top',
-      end: 'bottom top',
-      scrub: 0.6,
-    },
-  }
-);
+//
+// FIX (auditoría, hallazgo 6 — Media): en móvil (≤768px) .hero-visual
+// tiene display:none (ver styles.css), pero este ScrollTrigger seguía
+// registrado y recalculando en cada frame de scroll igual — ciclos de
+// CPU/batería desperdiciados exactamente en el dispositivo donde más
+// importa cuidarlos, animando un elemento que nadie puede ver. Se usa
+// gsap.matchMedia() para que el tween del hero solo exista cuando el
+// elemento es realmente visible, y se destruya limpio al cruzar el
+// breakpoint (por ejemplo al rotar el dispositivo o redimensionar la
+// ventana del navegador).
+const mmHero = gsap.matchMedia();
+
+mmHero.add('(min-width: 769px)', () => {
+  gsap.fromTo('.hero-visual-inner',
+    { scale: 1.45, opacity: 0.35, yPercent: -12 },
+    {
+      scale: 1,
+      opacity: 1,
+      yPercent: 12,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 0.6,
+      },
+    }
+  );
+  // gsap.matchMedia() limpia automáticamente este tween y su
+  // ScrollTrigger asociado al salir de la condición — no hace falta
+  // return de una función de cleanup manual para este caso simple.
+});
 
 // ─── CATEGORÍAS ──────────────────────────────────────────────────────────
 // Misma idea que el hero pero por tarjeta: cada imagen tiene su propio

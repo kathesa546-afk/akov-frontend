@@ -621,6 +621,19 @@ body {
 }
 
 .filter-chip {
+  /* FIX (auditoría, hallazgo 11 — Alta): la altura visual real de este
+     chip es ~25px (padding .4rem + line-height del font .65rem) — muy
+     por debajo del mínimo táctil de 48px. Agrandar el pill de verdad
+     rompería la estética minimalista del sitio (mismo problema que
+     motivó NO tocar el tamaño visual de .icon-btn/.talla-btn en la
+     ronda de auditoría anterior). En vez de eso, se usa la técnica
+     estándar de "hit-slop": un ::before invisible, centrado sobre el
+     chip, que garantiza un área clicable mínima de 48x48px sin cambiar
+     ni un píxel del diseño visual. Un clic en la zona invisible del
+     ::before se resuelve igual como un clic en el propio botón — no
+     hace falta JS adicional.
+  */
+  position: relative;
   padding: 0.4rem 1rem;
   font-size: 0.65rem;
   letter-spacing: 0.12em;
@@ -633,6 +646,16 @@ body {
   font-family: var(--font-body);
 }
 
+.filter-chip::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: max(100%, 48px);
+  height: max(100%, 48px);
+}
+
 .filter-chip:hover,
 .filter-chip.active {
   background: var(--negro);
@@ -643,7 +666,14 @@ body {
 .filter-sep { color: var(--gris-200); }
 
 .sort-select {
-  padding: 0.4rem 2rem 0.4rem 1rem;
+  /* FIX (auditoría, hallazgo 11 — Alta): antes ~25px de alto (padding
+     .4rem). A diferencia de los botones, un <select> nativo no soporta
+     el truco del ::before de forma confiable entre navegadores (Safari
+     en particular no siempre lo pinta sobre controles de formulario),
+     así que acá SÍ se aumenta el tamaño real con min-height, que es
+     seguro y consistente en todos los navegadores. */
+  min-height: 48px;
+  padding: 0.75rem 2rem 0.75rem 1rem;
   font-size: 0.65rem;
   letter-spacing: 0.12em;
   border: 0.5px solid var(--gris-200);
@@ -1607,11 +1637,13 @@ footer {
 }
 
 .payment-option {
+  /* FIX (auditoría, hallazgo 11 — Alta): antes ~39px de alto. */
   display: flex;
   align-items: center;
   gap: 0.75rem;
   font-size: 0.78rem;
   color: var(--gris-600);
+  min-height: 48px;
   padding: 0.75rem;
   border: 0.5px solid var(--gris-200);
   cursor: pointer;
@@ -1707,6 +1739,38 @@ footer {
 /* =====================
    RESPONSIVE MÓVIL
 ===================== */
+/* =====================
+   RESPONSIVE
+   FIX (auditoría, hallazgo 5 — Media): antes había 5 bloques @media
+   distintos repartidos por todo el archivo — dos de ellos con el MISMO
+   breakpoint (max-width:768px) declarado por separado en vez de
+   fusionado, a más de 400 líneas de distancia uno del otro. Difícil de
+   mantener y con riesgo real de que una regla pisara a otra sin que
+   nadie lo notara. Ahora todo el responsive vive en una sola sección,
+   ordenada de la pantalla más ancha a la más angosta.
+===================== */
+
+/* ─── TABLET (769px–1024px) ─────────────────────────────
+   Antes saltaba directo de 4 columnas (desktop) a 2 columnas (≤768px),
+   dejando este rango con tarjetas de producto desproporcionadas. */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .products-grid { grid-template-columns: repeat(3, 1fr); }
+  .cat-grid { grid-template-columns: 1fr 1fr; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+}
+
+/* ─── ACCIONES RÁPIDAS DE PRODUCTO EN TÁCTIL (≤1024px) ──
+   .product-actions solo se revelaba con :hover, que no existe de forma
+   confiable en pantallas táctiles — los botones "Ver producto"/favorito
+   quedaban prácticamente inalcanzables en móvil y tablet. */
+@media (max-width: 1024px) {
+  .product-actions { bottom: 0; }
+}
+
+/* ─── MÓVIL (≤768px) ─────────────────────────────────────
+   Único bloque — antes vivía partido en dos @media(max-width:768px)
+   separados. Incluye las reglas de búsqueda/cupón/filtros que antes
+   estaban en el segundo bloque duplicado. */
 @media (max-width: 768px) {
   .navbar { padding: 0 1.5rem; }
   .nav-links { display: none; }
@@ -1736,7 +1800,15 @@ footer {
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: 0.5rem;
+    gap: .5rem;
   }
+
+  .filter-header { flex-direction: column; align-items: flex-start; gap: .75rem; }
+
+  .search-wrap { max-width: 100%; }
+
+  .cupon-wrap { flex-direction: column; }
+  .cupon-btn { width: 100%; text-align: center; }
 
   .products-section { padding: 1.5rem; }
 
@@ -1788,6 +1860,20 @@ footer {
     gap: 1rem;
     text-align: center;
   }
+}
+
+/* ─── MÓVIL PEQUEÑO (≤420px) ────────────────────────────
+   iPhone SE y similares: con 2 columnas las tarjetas de producto
+   quedaban demasiado angostas para leer nombre/precio. */
+@media (max-width: 420px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .hero-title { font-size: 2.6rem; }
+  .product-name { font-size: 0.85rem; }
+  .deal-title { font-size: 2rem; }
 }
 /* =====================
    USUARIO NAVBAR
@@ -1914,8 +2000,11 @@ footer {
 }
 
 .search-input {
+  /* FIX (auditoría, hallazgo 11 — Alta): antes ~27px de alto
+     (padding .45rem). Es un <input> nativo — se sube a 48px reales. */
   width: 100%;
-  padding: .45rem 2.5rem .45rem 1rem;
+  min-height: 48px;
+  padding: .75rem 2.5rem .75rem 1rem;
   font-size: .65rem;
   letter-spacing: .1em;
   font-family: var(--font-body);
@@ -1945,8 +2034,12 @@ footer {
 }
 
 .cupon-input {
+  /* FIX (auditoría, hallazgo 11 — Alta): antes ~33px de alto
+     (padding .65rem). Se sube a 48px junto con .cupon-btn para que el
+     grupo input+botón quede parejo visualmente. */
   flex: 1;
-  padding: .65rem 1rem;
+  min-height: 48px;
+  padding: .75rem 1rem;
   font-size: .75rem;
   letter-spacing: .12em;
   text-transform: uppercase;
@@ -1962,7 +2055,8 @@ footer {
 .cupon-input::placeholder { text-transform: none; letter-spacing: .05em; color: var(--gris-400); }
 
 .cupon-btn {
-  padding: .65rem 1.25rem;
+  min-height: 48px;
+  padding: .75rem 1.25rem;
   font-size: .62rem;
   letter-spacing: .15em;
   text-transform: uppercase;
@@ -2145,54 +2239,5 @@ footer {
   padding: 2rem 1.5rem;
 }
 
-/* ─── RESPONSIVE ADICIONES ──────────────────────────── */
-@media (max-width: 768px) {
-  .search-wrap { max-width: 100%; }
-  .cupon-wrap { flex-direction: column; }
-  .cupon-btn { width: 100%; text-align: center; }
-  .filters { gap: .5rem; }
-  .filter-header { flex-direction: column; align-items: flex-start; gap: .75rem; }
-}
-
-/* ─── TABLET (breakpoint intermedio que faltaba) ────────
-   Antes saltaba directo de 4 columnas (desktop) a 2 columnas (≤768px),
-   dejando el rango 769–1024px con tarjetas de producto desproporcionadas. */
-@media (max-width: 1024px) and (min-width: 769px) {
-  .products-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .cat-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .footer-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-  }
-}
-
-/* ─── MÓVIL PEQUEÑO (breakpoint que faltaba) ────────────
-   Pantallas <420px (iPhone SE y similares) con 2 columnas quedaban con
-   tarjetas de producto demasiado angostas para leer nombre/precio. */
-@media (max-width: 420px) {
-  .products-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .hero-title { font-size: 2.6rem; }
-  .product-name { font-size: 0.85rem; }
-  .deal-title { font-size: 2rem; }
-}
-
-/* ─── ACCIONES RÁPIDAS DE PRODUCTO EN TÁCTIL ────────────
-   .product-actions solo se revelaba con :hover, que no existe de forma
-   confiable en pantallas táctiles — los botones "Ver producto" / favorito
-   quedaban prácticamente inalcanzables en móvil. Se muestran siempre por
-   debajo del breakpoint de tablet. */
-@media (max-width: 1024px) {
-  .product-actions {
-    bottom: 0;
-  }
-}
+/* Sección RESPONSIVE consolidada más arriba en este archivo — ver
+   comentario "FIX (auditoría, hallazgo 5 — Media)". */

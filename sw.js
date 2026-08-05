@@ -4,6 +4,12 @@
 // el catálogo, el stock y los precios siempre deben venir frescos del
 // servidor, nunca de una versión vieja guardada en el teléfono de alguien.
 
+// FIX (auditoría, hallazgo 8 — Media): CACHE_VERSION ya no se sube a mano
+// en cada deploy — el workflow de GitHub Actions (deploy.yml) la
+// reemplaza automáticamente por el hash corto del commit antes de
+// publicar (ver "FIX (auditoría, hallazgo 8)" en deploy.yml). Así nadie
+// puede olvidarse de subir la versión y dejar a usuarios con la PWA
+// instalada atascados en una versión vieja de styles.css/main.js.
 const CACHE_VERSION = 'akov-v1';
 const CACHE_ESTATICO = `${CACHE_VERSION}-estatico`;
 
@@ -12,6 +18,7 @@ const ARCHIVOS_APP_SHELL = [
   '/index.html',
   '/css/styles.css',
   '/js/main.js',
+  '/js/animations.js',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

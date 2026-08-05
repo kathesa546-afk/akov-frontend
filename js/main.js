@@ -602,6 +602,37 @@ function detectarTokenDeReset() {
   if (tabResetConfirmar) tabResetConfirmar.style.display = 'block';
 }
 
+// FIX (auditoría, hallazgo 2 — Alta): el backend SIEMPRE envió el correo
+// de bienvenida con un enlace "?verificar={token}", y SIEMPRE existió el
+// endpoint POST /auth/verificar-email/ — pero el frontend nunca leía ese
+// parámetro de la URL ni llamaba a ese endpoint. Nadie podía verificar su
+// correo desde el enlace, y como el cupón de bienvenida (BIENVENIDO15) se
+// envía DENTRO de verificar_email() en el backend, ningún usuario
+// registrado por el formulario normal recibía jamás ese cupón. Replica el
+// mismo patrón que detectarTokenDeReset(), llamada igual desde INICIAR.
+async function detectarTokenDeVerificacion() {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('verificar');
+  if (!token) return;
+
+  // Limpia el parámetro de la URL de inmediato — no debe sobrevivir a un
+  // refresh ni quedar visible/copiable en la barra de direcciones.
+  const url = new URL(window.location.href);
+  url.searchParams.delete('verificar');
+  window.history.replaceState({}, '', url);
+
+  const res = await apiCall('/auth/verificar-email/', 'POST', { token });
+  if (!res) {
+    mostrarNotificacion('Error de conexión al verificar tu correo');
+    return;
+  }
+  if (res.error) {
+    mostrarNotificacion(res.error);
+    return;
+  }
+  mostrarNotificacion(res.mensaje || '¡Correo verificado correctamente! Revisa tu bandeja para el cupón de bienvenida.');
+}
+
 // =====================
 // RENDER PRODUCTOS
 // =====================
@@ -1228,8 +1259,17 @@ async function aplicarCupon() {
     return;
   }
 
+  // FIX (auditoría, hallazgo 9 — Crítica): se manda el email disponible
+  // (usuario logueado o el que ya haya escrito en el checkout) para que
+  // el backend pueda validar la restricción "solo primera compra"
+  // también en compras de invitado — antes el backend no tenía forma de
+  // saber a quién validar si no había sesión (ver
+  // _cupon_bloqueado_por_primera_compra en views.py).
+  const chkEmailInput = document.getElementById('chkEmail');
+  const email = usuarioActual ? usuarioActual.email : (chkEmailInput ? chkEmailInput.value.trim() : '');
+
   const subtotal = carrito.reduce((s, i) => s + i.precio * (i.cantidad || 1), 0);
-  const res = await apiCall('/checkout/cupon/', 'POST', { codigo, subtotal });
+  const res = await apiCall('/checkout/cupon/', 'POST', { codigo, subtotal, email });
 
   if (!res || res.error) {
     cuponAplicado = null;
@@ -1547,6 +1587,7 @@ cargarCategoriasAPI();
 cargarProductosAPI();
 bindearInputsEstaticos();
 detectarTokenDeReset();
+detectarTokenDeVerificacion();
 
 // PWA: registrar el service worker (si el navegador lo soporta — no todos,
 // así que se comprueba antes en vez de asumir).

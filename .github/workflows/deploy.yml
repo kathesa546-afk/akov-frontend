@@ -14,6 +14,33 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+
+      # FIX (auditoría, hallazgo 15 — Media): antes no había ningún tipo
+      # de verificación del frontend antes de publicar — un error de
+      # sintaxis en main.js se descubría recién en producción. Este check
+      # es barato (segundos) y detecta lo más grave antes del deploy.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verificar sintaxis de los archivos JS
+        run: |
+          node --check js/main.js
+          node --check js/animations.js
+          node --check sw.js
+
+      # FIX (auditoría, hallazgo 8 — Media): antes CACHE_VERSION era un
+      # string fijo ('akov-v1') que había que recordar subir a mano en
+      # cada deploy que cambiara styles.css/main.js — si se olvidaba,
+      # usuarios con la PWA instalada quedaban más tiempo del esperado con
+      # una versión vieja cacheada. Ahora se reemplaza automáticamente por
+      # el hash corto del commit en cada despliegue, así que SIEMPRE
+      # cambia y nunca depende de que alguien se acuerde de tocarla.
+      - name: Fijar versión de caché del Service Worker al commit actual
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          sed -i "s/const CACHE_VERSION = 'akov-v1';/const CACHE_VERSION = 'akov-${SHORT_SHA}';/" sw.js
+          grep "CACHE_VERSION" sw.js
+
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
