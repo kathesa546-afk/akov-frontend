@@ -5,15 +5,22 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
   ? 'http://127.0.0.1:8000/api'
   : 'https://api.akov3.com/api';
 
-// FIX (auditoría, hallazgo 5.1 — Alta): el refresh token YA NO se guarda en
-// localStorage. Ahora vive en una cookie httpOnly que el backend controla
-// (ver _set_refresh_cookie en views.py) — JavaScript no puede leerla ni
-// escribirla, así que un ataque XSS ya no puede robar la sesión completa,
-// solo en el peor caso el access token de vida corta (60 min) que sigue en
-// memoria/localStorage para poder mandarlo en el header Authorization.
-const getToken = () => localStorage.getItem('akov_token');
-const setToken = t => localStorage.setItem('akov_token', t);
-const removeToken = () => localStorage.removeItem('akov_token');
+// FIX (auditoría de seguimiento, hallazgo 8 — Baja, residual): antes el
+// access token vivía en localStorage — legible por cualquier script,
+// incluyendo uno inyectado por un CDN de terceros comprometido (el
+// sitio carga cdnjs.cloudflare.com y checkout.epayco.co) o una futura
+// regresión que reintroduzca innerHTML sin sanitizar. El hallazgo
+// crítico original (el refresh token) ya se resolvió moviéndolo a una
+// cookie httpOnly; esto cierra la pieza residual: el access token de
+// corta duración (60 min) ahora vive únicamente en una variable de
+// módulo — solo existe en memoria mientras la pestaña sigue abierta, y
+// desaparece al recargar la página. Eso está bien porque
+// verificarSesion() (ver más abajo) ya pide uno nuevo automáticamente
+// con la cookie httpOnly del refresh token en cuanto carga la página.
+let accessTokenEnMemoria = null;
+const getToken = () => accessTokenEnMemoria;
+const setToken = t => { accessTokenEnMemoria = t; };
+const removeToken = () => { accessTokenEnMemoria = null; };
 const getUsuarioGuardado = () => {
   const u = localStorage.getItem('akov_usuario');
   return u ? JSON.parse(u) : null;
@@ -404,15 +411,31 @@ function actualizarNavbarUsuario() {
 // =====================
 async function verificarSesion() {
   const usuario = getUsuarioGuardado();
-  const token = getToken();
-  if (usuario && token) {
-    usuarioActual = usuario;
-    actualizarNavbarUsuario();
-    cargarFavoritosBackend();
-    if (usuarioActual.nombre) {
-      const chkNombre = document.getElementById('chkNombre');
-      if (chkNombre && !chkNombre.value) chkNombre.value = usuarioActual.nombre;
-    }
+  if (!usuario) return;
+
+  // FIX (auditoría de seguimiento, hallazgo 8 — Baja): ya que el access
+  // token no persiste entre recargas (vive en memoria, ver getToken()
+  // arriba), acá SIEMPRE hace falta pedir uno nuevo usando la cookie
+  // httpOnly del refresh token — antes esta función solo miraba si
+  // localStorage tenía un token guardado (a veces ya vencido) sin
+  // intentar refrescarlo primero.
+  const refrescado = await refrescarAccess();
+  if (!refrescado) {
+    // El refresh token también venció o ya no es válido (ej. el
+    // usuario cerró sesión desde otro dispositivo, o pasaron los 7 días
+    // de validez) — no hay sesión real que restaurar. Se limpia el
+    // residuo de localStorage para no mostrar un estado "logueado"
+    // engañoso en la interfaz.
+    removeUsuario();
+    return;
+  }
+
+  usuarioActual = usuario;
+  actualizarNavbarUsuario();
+  cargarFavoritosBackend();
+  if (usuarioActual.nombre) {
+    const chkNombre = document.getElementById('chkNombre');
+    if (chkNombre && !chkNombre.value) chkNombre.value = usuarioActual.nombre;
   }
 }
 
@@ -691,7 +714,7 @@ function renderProductos(lista) {
 // =====================
 async function abrirProducto(slug, idRespaldo) {
   const contenido = document.getElementById("modalProductoContenido");
-  contenido.innerHTML = '<p style="padding:3rem;text-align:center;color:#999490;font-size:.8rem">Cargando producto…</p>';
+  contenido.innerHTML = '<p class="js-empty-state">Cargando producto…</p>';
   document.getElementById("productModal").classList.add("open");
   document.body.style.overflow = "hidden";
 
@@ -699,7 +722,7 @@ async function abrirProducto(slug, idRespaldo) {
   if (slug && !modoRespaldo) {
     const detalle = await apiCall(`/productos/${encodeURIComponent(slug)}/`);
     if (!detalle || detalle.error) {
-      contenido.innerHTML = '<p style="padding:3rem;text-align:center;color:#999490;font-size:.8rem">No pudimos cargar este producto. Intenta de nuevo.</p>';
+      contenido.innerHTML = '<p class="js-empty-state">No pudimos cargar este producto. Intenta de nuevo.</p>';
       return;
     }
     p = {
@@ -721,7 +744,7 @@ async function abrirProducto(slug, idRespaldo) {
     // Modo respaldo: el producto ya tiene todo lo necesario en PRODUCTOS_DATA_MOCK.
     p = PRODUCTOS_DATA_MOCK.find(x => x.id === idRespaldo);
     if (!p) {
-      contenido.innerHTML = '<p style="padding:3rem;text-align:center;color:#999490;font-size:.8rem">Producto no encontrado.</p>';
+      contenido.innerHTML = '<p class="js-empty-state">Producto no encontrado.</p>';
       return;
     }
     p = { ...p, fotos: [] };
@@ -737,12 +760,12 @@ async function abrirProducto(slug, idRespaldo) {
   const primeraFoto = fotos[0];
   const nombreSeguro = escapeHTML(p.nombre);
   const fotoMainHTML = primeraFoto.imagen_url
-    ? `<img src="${optimizarImagen(primeraFoto.imagen_url, 800)}" alt="${nombreSeguro}" id="galeriaMainImg" style="width:100%;height:100%;object-fit:cover" decoding="async">`
-    : `<span id="galeriaMainIcon" style="font-size:5rem">${p.icono || '👗'}</span>`;
+    ? `<img src="${optimizarImagen(primeraFoto.imagen_url, 800)}" alt="${nombreSeguro}" id="galeriaMainImg" class="js-cover-img" decoding="async">`
+    : `<span id="galeriaMainIcon" class="js-icon-lg">${p.icono || '👗'}</span>`;
 
   const miniaturasHTML = fotos.map((f, i) => {
     const content = f.imagen_url
-      ? `<img src="${optimizarImagen(f.imagen_url, 150)}" alt="${nombreSeguro} foto ${i + 1}" style="width:100%;height:100%;object-fit:cover" loading="lazy" decoding="async">`
+      ? `<img src="${optimizarImagen(f.imagen_url, 150)}" alt="${nombreSeguro} foto ${i + 1}" class="js-cover-img" loading="lazy" decoding="async">`
       : `<span style="font-size:1.8rem">${p.icono || '👗'}</span>`;
     return `<div class="miniatura ${i === 0 ? 'active' : ''}" data-action="cambiar-foto" data-imgurl="${escapeHTML(f.imagen_url || '')}" data-icono="${escapeHTML(p.icono || '👗')}">${content}</div>`;
   }).join('');
@@ -775,7 +798,7 @@ async function abrirProducto(slug, idRespaldo) {
         <p class="tallas-label">Selecciona tu talla</p>
         <div class="tallas-grid">${tallasHTML}</div>
         <div class="producto-btns">
-          <button class="btn-primary" style="flex:1" data-action="agregar-detalle" data-id="${p.id}">Agregar al carrito</button>
+          <button class="btn-primary js-flex-1" data-action="agregar-detalle" data-id="${p.id}">Agregar al carrito</button>
           <button class="btn-outline" id="btnFavDetalle${p.id}"
             data-action="fav-modal" data-id="${p.id}">
             ${favoritos.find(f => f.id === p.id) ? '♥ Guardado' : '♡ Favorito'}
@@ -804,9 +827,9 @@ function cerrarProducto() {
 function cambiarFoto(el, imgUrl, icono) {
   const main = document.getElementById("galeriaMain");
   if (imgUrl) {
-    main.innerHTML = `<img src="${optimizarImagen(imgUrl, 800)}" alt="foto" style="width:100%;height:100%;object-fit:cover" decoding="async">`;
+    main.innerHTML = `<img src="${optimizarImagen(imgUrl, 800)}" alt="foto" class="js-cover-img" decoding="async">`;
   } else {
-    main.innerHTML = `<span style="font-size:5rem">${icono}</span>`;
+    main.innerHTML = `<span class="js-icon-lg">${icono}</span>`;
   }
   document.querySelectorAll(".miniatura").forEach(m => m.classList.remove("active"));
   el.classList.add("active");
@@ -884,13 +907,13 @@ function actualizarCarrito() {
           ? `<img src="${optimizarImagen(item.foto, 100)}" alt="${escapeHTML(item.nombre)}" style="width:100%;height:100%;object-fit:cover;border-radius:2px" loading="lazy" decoding="async">`
           : (item.icono || '👕')}
       </div>
-      <div style="flex:1">
+      <div class="js-flex-1">
         <p class="cart-item-name">${escapeHTML(item.nombre)}</p>
         <p class="cart-item-meta">Talla ${escapeHTML(item.talla || 'M')}</p>
         <div style="display:flex;align-items:center;gap:.5rem;margin-top:.3rem">
-          <button data-action="cambiar-cantidad" data-index="${i}" data-delta="-1" style="background:var(--gris-100);border:none;width:40px;height:40px;cursor:pointer;font-size:1rem;border-radius:2px">−</button>
+          <button data-action="cambiar-cantidad" data-index="${i}" data-delta="-1" class="js-qty-btn">−</button>
           <span style="font-size:.72rem;min-width:16px;text-align:center">${item.cantidad || 1}</span>
-          <button data-action="cambiar-cantidad" data-index="${i}" data-delta="1" style="background:var(--gris-100);border:none;width:40px;height:40px;cursor:pointer;font-size:1rem;border-radius:2px">+</button>
+          <button data-action="cambiar-cantidad" data-index="${i}" data-delta="1" class="js-qty-btn">+</button>
         </div>
         <p class="cart-item-price">$${formatPrecio(item.precio * (item.cantidad || 1))}</p>
       </div>
@@ -953,10 +976,10 @@ function actualizarFavoritos() {
     <div class="fav-item">
       <div class="fav-item-img">
         ${p.foto
-          ? `<img src="${optimizarImagen(p.foto, 100)}" alt="${escapeHTML(p.nombre)}" style="width:100%;height:100%;object-fit:cover" loading="lazy" decoding="async">`
+          ? `<img src="${optimizarImagen(p.foto, 100)}" alt="${escapeHTML(p.nombre)}" class="js-cover-img" loading="lazy" decoding="async">`
           : (p.icono || '👗')}
       </div>
-      <div style="flex:1">
+      <div class="js-flex-1">
         <p class="fav-item-name">${escapeHTML(p.nombre)}</p>
         <p class="fav-item-price">$${formatPrecio(p.precio)}</p>
       </div>
@@ -1149,11 +1172,29 @@ async function iniciarPagoEpayco() {
       }
     });
   } catch (e) {
-    carrito = [];
-    guardarCarrito();
-    actualizarCarrito();
-    cerrarTodosLosPaneles();
-    mostrarNotificacion(`¡Pedido #${pedidoId} registrado! Te contactaremos para el pago`);
+    // FIX (auditoría de seguimiento, hallazgo 6 — Media): antes, si
+    // ePayco.checkout.configure() u handler.open() lanzaban una
+    // excepción síncrona (ej. el script de checkout.epayco.co no cargó
+    // por un ad-blocker o un fallo de red), este catch vaciaba el
+    // carrito y mostraba "¡Pedido registrado!" como si la compra se
+    // hubiera completado — pero el pedido seguía en estado 'pendiente'
+    // en el backend: nunca se cobró, nunca llegará el webhook. El
+    // cliente creía que había comprado; nadie se enteraba de que en
+    // realidad no pasó nada, a menos que alguien revisara el panel de
+    // admin manualmente.
+    //
+    // Ahora: se registra el error para poder depurarlo, NO se vacía el
+    // carrito (el cliente no pagó — debe poder reintentar con los
+    // mismos items) y se le informa honestamente qué pasó, con el
+    // número de pedido para que pueda referenciarlo si escribe a
+    // soporte.
+    console.error('Error al iniciar el checkout de ePayco:', e);
+    mostrarNotificacion(
+      `No se pudo abrir la pasarela de pago. Tu pedido #${pedidoId} quedó ` +
+      `guardado pero NO se realizó ningún cobro. Intenta de nuevo o ` +
+      `contáctanos por WhatsApp mencionando el número de pedido.`,
+      8000
+    );
   }
 }
 
@@ -1194,8 +1235,8 @@ function actualizarCheckout() {
 
   el.innerHTML = carrito.map(item => `
     <div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:.5px solid var(--gris-200);font-size:.75rem">
-      <span>${escapeHTML(item.nombre)} <span style="color:var(--gris-400)">T.${escapeHTML(item.talla || 'M')}</span>
-        ${(item.cantidad || 1) > 1 ? ` <span style="color:var(--gris-400)">×${item.cantidad}</span>` : ''}
+      <span>${escapeHTML(item.nombre)} <span class="js-text-muted">T.${escapeHTML(item.talla || 'M')}</span>
+        ${(item.cantidad || 1) > 1 ? ` <span class="js-text-muted">×${item.cantidad}</span>` : ''}
       </span>
       <span style="font-family:var(--font-display)">$${formatPrecio(item.precio * (item.cantidad || 1))}</span>
     </div>
@@ -1368,12 +1409,17 @@ function cerrarTodosLosPaneles() {
 // NOTIFICACIÓN
 // =====================
 let notifyTimer;
-function mostrarNotificacion(msg) {
+function mostrarNotificacion(msg, duracionMs = 3500) {
+  // FIX (auditoría de seguimiento, hallazgo 6 — Media, mejora de soporte):
+  // duración configurable (con el mismo default de siempre) para poder
+  // dejar más tiempo en pantalla los mensajes largos/importantes, como
+  // el aviso de fallo en el checkout de ePayco — 3.5s no alcanza para
+  // leer una explicación completa de qué pasó con el pago.
   const el = document.getElementById('notify');
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(notifyTimer);
-  notifyTimer = setTimeout(() => el.classList.remove('show'), 3500);
+  notifyTimer = setTimeout(() => el.classList.remove('show'), duracionMs);
 }
 
 // =====================
@@ -1423,9 +1469,21 @@ function optimizarImagen(url, ancho) {
 
 // El backend expone 'estado' y 'metodo_pago' como el valor crudo del choice
 // (ej. 'pendiente', 'epayco'), no una versión ya traducida a texto legible.
+// FIX (auditoría de seguimiento, hallazgo 11 — Baja): antes solo estaban
+// mapeados 'pendiente', 'confirmado' y 'cancelado' — los otros tres
+// estados que sí existen en Pedido.ESTADO_CHOICES ('preparando',
+// 'enviado', 'entregado') caían al fallback `|| p.estado` en
+// cargarPedidos() y se mostraban en crudo (ej. "preparando" en vez de
+// "En preparación"), rompiendo la consistencia del resto de la
+// interfaz. Se completan las 6 etiquetas, con el mismo texto que usa
+// el backend (Pedido.ESTADO_CHOICES en models.py) para que no se
+// desalineen si alguien agrega un estado nuevo de un solo lado.
 const ESTADO_LABELS = {
-  pendiente: 'Pendiente',
-  confirmado: 'Confirmado',
+  pendiente: 'Pendiente de pago',
+  confirmado: 'Pago confirmado',
+  preparando: 'En preparación',
+  enviado: 'Enviado',
+  entregado: 'Entregado',
   cancelado: 'Cancelado',
 };
 const METODO_PAGO_LABELS = {

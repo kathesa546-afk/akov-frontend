@@ -2241,3 +2241,45 @@ footer {
 
 /* Sección RESPONSIVE consolidada más arriba en este archivo — ver
    comentario "FIX (auditoría, hallazgo 5 — Media)". */
+
+/* ─── UTILIDADES JS ──────────────────────────────────────────────────
+   FIX (auditoría de seguimiento, hallazgo 11 — Baja): estos bloques se
+   generaban repetidos como `style="..."` inline en main.js (hasta 4
+   veces el mismo bloque literal) en vez de vivir acá como clases
+   reutilizables. No se tocó cada `style=""` de la aplicación — solo los
+   patrones que realmente se repetían — para no convertir un hallazgo
+   de severidad Baja en un refactor grande y riesgoso. */
+.js-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.js-empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: #999490;
+  font-size: .8rem;
+}
+
+.js-flex-1 {
+  flex: 1;
+}
+
+.js-icon-lg {
+  font-size: 5rem;
+}
+
+.js-text-muted {
+  color: var(--gris-400);
+}
+
+.js-qty-btn {
+  background: var(--gris-100);
+  border: none;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: 2px;
+}
