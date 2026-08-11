@@ -13,6 +13,15 @@
   <meta name="theme-color" content="#0a0a0a">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <!-- FIX (auditoría de seguimiento, hallazgo 13 — Baja): sin estos meta
+       tags, cuando un usuario de iPhone agrega el sitio a su pantalla de
+       inicio, Safari lo abre con la barra de direcciones visible en vez
+       de en modo standalone real — una experiencia PWA notablemente
+       menos pulida en iOS que en Android, donde manifest.json ya
+       controla esto correctamente por su cuenta. -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AKOV">
   <!-- DOMPurify: protección XSS obligatoria -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
   <!-- FIX (auditoría, hallazgo 2.2 — Media): CSP.

@@ -27,5 +27,21 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ver catálogo",
+      "short_name": "Catálogo",
+      "description": "Ir directo a la vitrina de productos",
+      "url": "/#productos",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Rastrear pedido",
+      "short_name": "Rastrear",
+      "description": "Buscar el estado de un envío por número de guía",
+      "url": "/#rastreo",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
