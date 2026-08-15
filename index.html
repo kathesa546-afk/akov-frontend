@@ -4,6 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AKOV — Moda consciente desde Colombia. Chaquetas, vestidos, blusas y más.">
+  <link rel="canonical" href="https://akov3.com/">
+  <!-- FIX (auditoría nueva, hallazgo 3.2 — Media): sin estas etiquetas,
+       cualquier link de AKOV compartido en WhatsApp, Instagram o Facebook
+       (el canal de adquisición natural de una tienda con botón de
+       WhatsApp en el propio menú) se veía como texto plano, sin imagen ni
+       descripción — una pérdida de conversión directa. Es una SPA sin
+       rutas server-renderizadas por producto, así que esto es un mínimo
+       global (no una ficha por producto individual), pero ya es una
+       mejora real sobre no tener nada. og:image usa el ícono de 512px
+       como respaldo — una foto horizontal real de producto se vería
+       mejor, pero generar esa imagen es una decisión de diseño/fotografía
+       del negocio, no algo para inventar acá. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="AKOV">
+  <meta property="og:locale" content="es_CO">
+  <meta property="og:url" content="https://akov3.com/">
+  <meta property="og:title" content="AKOV — Tienda de Ropa">
+  <meta property="og:description" content="Moda consciente desde Colombia. Chaquetas, vestidos, blusas y más.">
+  <meta property="og:image" content="https://akov3.com/icons/icon-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AKOV — Tienda de Ropa">
+  <meta name="twitter:description" content="Moda consciente desde Colombia. Chaquetas, vestidos, blusas y más.">
+  <meta name="twitter:image" content="https://akov3.com/icons/icon-512.png">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ClothingStore",
+    "name": "AKOV",
+    "url": "https://akov3.com/",
+    "description": "Moda consciente desde Colombia. Chaquetas, vestidos, blusas y más.",
+    "image": "https://akov3.com/icons/icon-512.png",
+    "areaServed": "CO"
+  }
+  </script>
   <title>AKOV — Tienda de Ropa</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +57,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AKOV">
   <!-- DOMPurify: protección XSS obligatoria -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"
+    integrity="sha384-cwS6YdhLI7XS60eoDiC+egV0qHp8zI+Cms46R0nbn8JrmoAzV9uFL60etMZhAnSu"
+    crossorigin="anonymous"></script>
   <!-- FIX (auditoría, hallazgo 2.2 — Media): CSP.
        ACTUALIZACIÓN tras completar el hallazgo 3.4: ya no queda ningún
        onclick=""/oninput=""/onchange="" inline en todo el sitio (toda la
@@ -437,9 +473,21 @@
           </div>
           <p class="checkout-section-title" style="margin-top:2rem">Método de pago</p>
           <div class="payment-options">
-            <label class="payment-option"><input type="radio" name="pago" value="epayco" checked> 💳 Tarjeta crédito / débito</label>
-            <label class="payment-option"><input type="radio" name="pago" value="epayco"> 🏦 PSE — Débito bancario</label>
-            <label class="payment-option"><input type="radio" name="pago" value="epayco"> 📱 Nequi / Daviplata</label>
+            <!-- FIX (auditoría nueva, hallazgo 3.3 — Baja): antes había 3
+                 radios distintos ("Tarjeta", "PSE", "Nequi/Daviplata") con
+                 el mismo value="epayco" — funcionalmente eran el mismo
+                 radio repetido 3 veces (el widget de ePayco deja elegir
+                 el método real adentro, sin importar cuál de los 3 se
+                 marcara acá). Era una promesa visual de 3 flujos
+                 distintos que en realidad era uno solo — se consolida en
+                 una sola opción honesta sobre qué pasa después. No se
+                 pasó ningún parámetro a ePayco para preseleccionar el
+                 método (como sugería el informe como alternativa) porque
+                 no hay forma de confirmar, sin acceso a la documentación
+                 vigente de la API de ePayco, que ese parámetro exista o
+                 se comporte como se espera — mejor ser honesto en la UI
+                 que prometer un comportamiento no verificado. -->
+            <label class="payment-option"><input type="radio" name="pago" value="epayco" checked> 💳 Pago en línea (Tarjeta, PSE, Nequi, Daviplata)</label>
             <label class="payment-option"><input type="radio" name="pago" value="efectivo"> 💵 Pago contra entrega</label>
           </div>
         </div>
@@ -508,11 +556,28 @@
   <!-- NOTIFICACIÓN TOAST -->
   <div class="notify" id="notify"></div>
 
+  <!-- FIX (auditoría nueva, hallazgo 6.1 — Alta): checkout.epayco.co/checkout.js
+       es, a propósito, el ÚNICO de los 4 scripts de terceros SIN atributo
+       integrity. Los otros tres (DOMPurify, GSAP, ScrollTrigger) están
+       versionados en su propia URL (ej. /3.0.6/) — el archivo en esa
+       ruta nunca cambia, así que fijar su hash es seguro y permanente.
+       checkout.js de ePayco NO está versionado en la URL; si ePayco
+       actualiza ese archivo (algo que puede pasar sin aviso, dado que es
+       su integración de pagos activa), un hash fijo bloquearía el
+       checkout completo la próxima vez que alguien intente pagar — un
+       riesgo peor que la ganancia marginal de seguridad, sobre todo
+       porque la CSP ya restringe que solo ese dominio exacto pueda
+       servir scripts. Queda documentado como excepción consciente, no
+       como omisión. -->
   <script src="https://checkout.epayco.co/checkout.js"></script>
   <script src="js/main.js"></script>
   <!-- GSAP + ScrollTrigger: efectos de zoom-con-scroll en hero y categorías -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
+    integrity="sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt"
+    crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"
+    integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d"
+    crossorigin="anonymous"></script>
   <script src="js/animations.js"></script>
 </body>
 </html>

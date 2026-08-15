@@ -6,6 +6,18 @@
 
 gsap.registerPlugin(ScrollTrigger);
 
+// FIX (auditoría nueva, hallazgo 3.1 — Media): no existía ninguna regla
+// `prefers-reduced-motion`. El parallax del hero y de cada tarjeta de
+// categoría/producto está ligado directamente a la posición del scroll
+// (scrub) — para personas con trastornos vestibulares o sensibilidad al
+// movimiento, este tipo de efecto no es solo estético, es una barrera de
+// accesibilidad real (criterio WCAG 2.1, 2.3.3). Se verifica esta
+// preferencia UNA vez al cargar: si el usuario la cambia después sin
+// recargar la página es un caso límite tan raro que no justifica la
+// complejidad de un listener reactivo — la próxima carga de página ya
+// respeta el nuevo valor.
+const prefiereMovimientoReducido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 // ─── HERO ─────────────────────────────────────────────────────────────────
 // Dos capas de movimiento a la vez (esto es lo que hace que se sienta
 // "parallax" de verdad, no solo un zoom): la imagen de fondo se desplaza
@@ -24,7 +36,12 @@ gsap.registerPlugin(ScrollTrigger);
 // ventana del navegador).
 const mmHero = gsap.matchMedia();
 
-mmHero.add('(min-width: 769px)', () => {
+// FIX (auditoría nueva, hallazgo 3.1 — Media): se agrega la condición de
+// movimiento reducido directamente en el media query de gsap.matchMedia()
+// — si el usuario la tiene activa, esta consulta compuesta nunca coincide,
+// así que el tween nunca se crea y gsap.matchMedia() se encarga de la
+// limpieza automáticamente, igual que ya hace con el breakpoint de 769px.
+mmHero.add('(min-width: 769px) and (prefers-reduced-motion: no-preference)', () => {
   gsap.fromTo('.hero-visual-inner',
     { scale: 1.45, opacity: 0.35, yPercent: -12 },
     {
@@ -50,6 +67,7 @@ mmHero.add('(min-width: 769px)', () => {
 // disparador de scroll, así que el efecto ocurre en el momento exacto en que
 // esa tarjeta específica cruza la pantalla, no todas a la vez.
 function aplicarParallaxCategorias() {
+  if (prefiereMovimientoReducido) return;
   document.querySelectorAll('.cat-item').forEach((item) => {
     const bg = item.querySelector('.cat-bg');
     if (!bg || bg.dataset.parallaxAplicado) return;
@@ -110,7 +128,7 @@ if (gridProductos) {
         observerProductos.observe(tarjeta);
       }
       const img = tarjeta.querySelector('.product-img-inner');
-      if (img && img.tagName === 'IMG' && !img.dataset.parallaxAplicado) {
+      if (img && img.tagName === 'IMG' && !img.dataset.parallaxAplicado && !prefiereMovimientoReducido) {
         img.dataset.parallaxAplicado = 'true';
         gsap.fromTo(img,
           { yPercent: -6, scale: 1.12 },
@@ -136,16 +154,18 @@ if (gridProductos) {
 }
 
 // ─── TITULARES DE SECCIÓN: fade-up suave al entrar en pantalla ──────────────
-document.querySelectorAll('.section-title, .deal-title, .sub-title').forEach((titulo) => {
-  gsap.from(titulo, {
-    y: 40,
-    opacity: 0,
-    duration: 1,
-    ease: 'power3.out',
-    scrollTrigger: {
-      trigger: titulo,
-      start: 'top 85%',
-      toggleActions: 'play none none none',
-    },
+if (!prefiereMovimientoReducido) {
+  document.querySelectorAll('.section-title, .deal-title, .sub-title').forEach((titulo) => {
+    gsap.from(titulo, {
+      y: 40,
+      opacity: 0,
+      duration: 1,
+      ease: 'power3.out',
+      scrollTrigger: {
+        trigger: titulo,
+        start: 'top 85%',
+        toggleActions: 'play none none none',
+      },
+    });
   });
-});
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  FIX (auditoría nueva, hallazgo 3.2 — Media): AKOV es una SPA sin rutas
+  server-renderizadas por producto o categoría — todo vive en index.html
+  y se renderiza vía JavaScript después de cargar. Por eso este sitemap
+  solo lista la home: listar URLs de productos individuales acá sería
+  falso (esas URLs no existen como recursos independientes que Google
+  pueda rastrear y mostrar de forma útil). Si en el futuro se agrega
+  routing real (ver hallazgo 2.3 sobre modularizar main.js, que es un
+  paso natural hacia eso), este archivo debería crecer junto con esas
+  rutas nuevas.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://akov3.com/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

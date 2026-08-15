@@ -1079,9 +1079,6 @@ async function iniciarPagoEpayco() {
     return;
   }
 
-  const subtotal = carrito.reduce((s, i) => s + i.precio * (i.cantidad || 1), 0);
-  const descuento = cuponAplicado ? cuponAplicado.descuento_calculado : 0;
-  const total = Math.max(0, subtotal - descuento + envioActual);
   const descripcion = carrito.map(i => `${i.nombre} (x${i.cantidad || 1})`).join(', ');
   // Fix hallazgo 1.4: el fallback anterior era 'tarjeta', que no es un
   // valor válido de metodo_pago (solo existen 'epayco'/'efectivo'). Nunca
@@ -1115,6 +1112,18 @@ async function iniciarPagoEpayco() {
   }
 
   const pedidoId = pedidoRes.pedido_id;
+  // FIX (auditoría nueva, hallazgo 1 — Crítica): antes se usaba la variable
+  // `total` calculada arriba en el navegador (a partir de carrito, cupón y
+  // envío — todo estado que cualquier persona puede modificar desde las
+  // herramientas de desarrollador) como el monto a cobrar en ePayco. El
+  // propio backend, al crear el pedido, ya recalcula el total desde
+  // precios reales de la base de datos y lo devuelve en `pedidoRes.total`
+  // — esa es la única fuente que un atacante no puede manipular desde el
+  // cliente, así que es la que se debe usar para el cobro real. (El
+  // backend además ahora valida esto de nuevo del lado del servidor en
+  // epayco_confirmacion(), como defensa en profundidad — este fix del
+  // frontend cierra el camino directo, pero la validación real vive allá.)
+  const totalAPagar = pedidoRes.total;
 
   if (pago === 'efectivo') {
     carrito = [];
@@ -1144,7 +1153,7 @@ async function iniciarPagoEpayco() {
       name: 'AKOV Tienda',
       description: descripcion,
       currency: 'cop',
-      amount: String(total),
+      amount: String(totalAPagar),
       tax_base: '0',
       tax: '0',
       country: 'co',

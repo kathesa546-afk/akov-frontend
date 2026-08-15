@@ -28,6 +28,29 @@ jobs:
           node --check js/animations.js
           node --check sw.js
 
+      # FIX (auditoría nueva, hallazgo 4.1 — Baja): main.js y styles.css se
+      # servían sin minificar (68 KB y 48 KB en crudo). GitHub Pages
+      # comprime con gzip en tránsito, así que el impacto real era menor
+      # de lo que sugiere el tamaño crudo — pero en redes móviles 3G/4G de
+      # gama baja (el público de una tienda colombiana con envíos "resto
+      # del país") cada KB de JS que hay que parsear antes de que el
+      # catálogo sea interactivo cuenta. Esto minifica solo la copia
+      # efímera del checkout de este job (la que se sube a Pages) — el
+      # código fuente legible en el repositorio nunca se toca, porque este
+      # paso corre en el workspace temporal del runner, no sobre el
+      # historial de git. terser/clean-css-cli se instalan al vuelo vía
+      # npx en vez de sumar un package.json permanente al proyecto — no
+      # hace falta ningún otro paso de build más que este.
+      - name: Minificar assets para producción (no toca el código fuente en git)
+        run: |
+          npx --yes terser js/main.js -c -m -o js/main.js
+          npx --yes terser js/animations.js -c -m -o js/animations.js
+          npx --yes clean-css-cli -o css/styles.css css/styles.css
+          # Verificación extra: confirmar que el minificador no introdujo
+          # ningún error de sintaxis en el JS resultante.
+          node --check js/main.js
+          node --check js/animations.js
+
       # FIX (auditoría, hallazgo 8 — Media): antes CACHE_VERSION era un
       # string fijo ('akov-v1') que había que recordar subir a mano en
       # cada deploy que cambiara styles.css/main.js — si se olvidaba,
