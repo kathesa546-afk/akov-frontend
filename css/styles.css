@@ -377,12 +377,24 @@ body {
 }
 
 .hero-visual {
-  background: var(--gris-100);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    background: var(--gris-100);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 500px; /* Asegura que el contenedor tenga altura visible */
+}
+
+.hero-visual .hero-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
 }
 
 .hero-bg-text {
