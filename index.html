@@ -5,17 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="AKOV — Moda consciente desde Colombia. Chaquetas, vestidos, blusas y más.">
   <link rel="canonical" href="https://akov3.com/">
-  <!-- FIX (auditoría nueva, hallazgo 3.2 — Media): sin estas etiquetas,
-       cualquier link de AKOV compartido en WhatsApp, Instagram o Facebook
-       (el canal de adquisición natural de una tienda con botón de
-       WhatsApp en el propio menú) se veía como texto plano, sin imagen ni
-       descripción — una pérdida de conversión directa. Es una SPA sin
-       rutas server-renderizadas por producto, así que esto es un mínimo
-       global (no una ficha por producto individual), pero ya es una
-       mejora real sobre no tener nada. og:image usa el ícono de 512px
-       como respaldo — una foto horizontal real de producto se vería
-       mejor, pero generar esa imagen es una decisión de diseño/fotografía
-       del negocio, no algo para inventar acá. -->
+
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="AKOV">
   <meta property="og:locale" content="es_CO">
@@ -47,12 +37,7 @@
   <meta name="theme-color" content="#0a0a0a">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <!-- FIX (auditoría de seguimiento, hallazgo 13 — Baja): sin estos meta
-       tags, cuando un usuario de iPhone agrega el sitio a su pantalla de
-       inicio, Safari lo abre con la barra de direcciones visible en vez
-       de en modo standalone real — una experiencia PWA notablemente
-       menos pulida en iOS que en Android, donde manifest.json ya
-       controla esto correctamente por su cuenta. -->
+  
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AKOV">
@@ -60,14 +45,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"
     integrity="sha384-cwS6YdhLI7XS60eoDiC+egV0qHp8zI+Cms46R0nbn8JrmoAzV9uFL60etMZhAnSu"
     crossorigin="anonymous"></script>
-  <!-- FIX (auditoría, hallazgo 2.2 — Media): CSP.
-       ACTUALIZACIÓN tras completar el hallazgo 3.4: ya no queda ningún
-       onclick=""/oninput=""/onchange="" inline en todo el sitio (toda la
-       interactividad pasó a addEventListener con delegación por
-       data-action, ver main.js). Por eso script-src ya NO necesita
-       'unsafe-inline' — si alguna vez alguien reintroduce un handler
-       inline por accidente, el navegador lo bloqueará solo y avisará en
-       consola, en vez de dejarlo pasar silenciosamente. -->
+ 
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://checkout.epayco.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://res.cloudinary.com; connect-src 'self' https://api.akov3.com https://checkout.epayco.co; frame-src https://checkout.epayco.co; object-src 'none'; base-uri 'self';">
 </head>
 <body>
@@ -149,10 +127,11 @@
       </div>
     </div>
     <div class="hero-visual">
-      <div class="hero-visual-inner">
-        <div class="hero-bg-text">AKOV</div>
-      </div>
-    </div>
+    <video autoplay muted loop playsinline class="hero-video">
+        <source src="https://res.cloudinary.com/dhjuihvtv/video/upload/v1794336206/lookbook-jean.mp4" type="video/mp4">
+        Tu navegador no soporta la reproducción de videos.
+    </video>
+</div>
   </section>
 
   <!-- CATEGORÍAS (conteos dinámicos) -->
