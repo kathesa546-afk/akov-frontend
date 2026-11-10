@@ -5,18 +5,6 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
   ? 'http://127.0.0.1:8000/api'
   : 'https://api.akov3.com/api';
 
-// FIX (auditoría de seguimiento, hallazgo 8 — Baja, residual): antes el
-// access token vivía en localStorage — legible por cualquier script,
-// incluyendo uno inyectado por un CDN de terceros comprometido (el
-// sitio carga cdnjs.cloudflare.com y checkout.epayco.co) o una futura
-// regresión que reintroduzca innerHTML sin sanitizar. El hallazgo
-// crítico original (el refresh token) ya se resolvió moviéndolo a una
-// cookie httpOnly; esto cierra la pieza residual: el access token de
-// corta duración (60 min) ahora vive únicamente en una variable de
-// módulo — solo existe en memoria mientras la pestaña sigue abierta, y
-// desaparece al recargar la página. Eso está bien porque
-// verificarSesion() (ver más abajo) ya pide uno nuevo automáticamente
-// con la cookie httpOnly del refresh token en cuanto carga la página.
 let accessTokenEnMemoria = null;
 const getToken = () => accessTokenEnMemoria;
 const setToken = t => { accessTokenEnMemoria = t; };
