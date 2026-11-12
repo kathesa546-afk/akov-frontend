@@ -4,7 +4,6 @@
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://127.0.0.1:8000/api'
   : 'https://api.akov3.com/api';
-
 let accessTokenEnMemoria = null;
 const getToken = () => accessTokenEnMemoria;
 const setToken = t => { accessTokenEnMemoria = t; };
