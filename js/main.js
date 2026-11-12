@@ -18,23 +18,27 @@ const removeUsuario = () => localStorage.removeItem('akov_usuario');
 
 // Interceptor que renueva el token automáticamente cuando expira (401)
 async function apiCall(endpoint, method = 'GET', data = null, retry = true) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = {};
   const token = getToken();
   if (token) headers['Authorization'] = 'Bearer ' + token;
-  // credentials: 'include' es OBLIGATORIO — sin esto el navegador nunca
-  // manda ni recibe la cookie httpOnly de sesión entre akov3.com y
-  // api.akov3.com (son orígenes distintos, aunque compartan dominio raíz).
+
   const opts = { method, headers, credentials: 'include' };
-  if (data) opts.body = JSON.stringify(data);
+
+  if (data) {
+    if (data instanceof FormData) {
+      opts.body = data;
+    } else {
+      headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(data);
+    }
+  }
 
   try {
     const res = await fetch(API_URL + endpoint, opts);
 
-    // Token expirado → intentar refrescar una vez
     if (res.status === 401 && retry) {
       const refreshed = await refrescarAccess();
       if (refreshed) return apiCall(endpoint, method, data, false);
-      // No se pudo refrescar → cerrar sesión silenciosamente
       await cerrarSesionSilencioso();
       return null;
     }
